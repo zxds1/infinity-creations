@@ -1,0 +1,548 @@
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { Camera, Upload, Sparkles, RefreshCw, ChevronRight, Share2, Crop, Check, X, Send, Play, Video, Plus, Trash2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { analyzeSpace } from '../services/geminiService';
+import ReactMarkdown from 'react-markdown';
+import Cropper from 'react-easy-crop';
+import { auth, db, collection, addDoc, serverTimestamp, handleFirestoreError, OperationType } from '../lib/firebase';
+import { toast } from 'react-hot-toast';
+import Tooltip from '../components/Tooltip';
+
+export default function SpaceAnalyzer() {
+  const [mediaFiles, setMediaFiles] = useState<{ type: 'image' | 'video', data: string }[]>([]);
+  const [image, setImage] = useState<string | null>(null);
+  const [croppedImage, setCroppedImage] = useState<string | null>(null);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [editingMediaIndex, setEditingMediaIndex] = useState<number | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [result, setResult] = useState<string | null>(null);
+  const [refinementText, setRefinementText] = useState("");
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        setIsCameraActive(true);
+      }
+    } catch (err) {
+      toast.error("Camera access denied");
+    }
+  };
+
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+      tracks.forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+      setIsCameraActive(false);
+    }
+  };
+
+  const captureFrame = () => {
+    if (videoRef.current && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(video, 0, 0);
+      const dataUrl = canvas.toDataURL('image/jpeg');
+      setMediaFiles(prev => [...prev, { type: 'image', data: dataUrl }]);
+      toast.success("Snapshot captured!");
+    }
+  };
+
+  const removeMedia = (index: number) => {
+    setMediaFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const onCropComplete = useCallback((_croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const createImage = (url: string): Promise<HTMLImageElement> =>
+    new Promise((resolve, reject) => {
+      const image = new Image();
+      image.addEventListener('load', () => resolve(image));
+      image.addEventListener('error', (error) => reject(error));
+      image.setAttribute('crossOrigin', 'anonymous');
+      image.src = url;
+    });
+
+  const getCroppedImg = async (imageSrc: string, pixelCrop: any): Promise<string> => {
+    const image = await createImage(imageSrc);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) return "";
+
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      pixelCrop.width,
+      pixelCrop.height
+    );
+
+    return canvas.toDataURL('image/jpeg');
+  };
+
+  const handleCrop = async () => {
+    try {
+      if (editingMediaIndex !== null && croppedAreaPixels) {
+        const targetImage = mediaFiles[editingMediaIndex].data;
+        const cropped = await getCroppedImg(targetImage, croppedAreaPixels);
+        
+        const newMediaFiles = [...mediaFiles];
+        newMediaFiles[editingMediaIndex] = { ...newMediaFiles[editingMediaIndex], data: cropped };
+        setMediaFiles(newMediaFiles);
+        setEditingMediaIndex(null);
+        toast.success("Image cropped successfully");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to crop image");
+    }
+  };
+
+  const startCrop = (index: number) => {
+    setEditingMediaIndex(index);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const type = file.type.startsWith('video') ? 'video' : 'image';
+        setMediaFiles(prev => [...prev, { type: type as any, data: reader.result as string }]);
+        setResult(null);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleShare = async () => {
+    if (!result) return;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Maridadi AI Recommendations',
+          text: result.substring(0, 500) + '...',
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.error('Share failed:', err);
+      }
+    } else {
+      // Fallback: Copy to clipboard
+      try {
+        await navigator.clipboard.writeText(result);
+        toast.success("Recommendations copied to clipboard!");
+      } catch (err) {
+        toast.error("Cloud not copy to clipboard");
+      }
+    }
+  };
+
+  const [analysisStatus, setAnalysisStatus] = useState("Identifying boundaries...");
+  
+  const statusMessages = [
+    "Identifying space boundaries...",
+    "Analyzing lighting conditions...",
+    "Evaluating color palettes...",
+    "Detecting furniture patterns...",
+    "Matching with artisanal crafts...",
+    "Optimizing focal points...",
+    "Curating custom decor...",
+    "Finalizing maridadi touch..."
+  ];
+
+  const runAnalysis = async (refinement?: string) => {
+    if (mediaFiles.length === 0) return;
+
+    setAnalyzing(true);
+    setAnalysisProgress(0);
+    setAnalysisStatus(statusMessages[0]);
+
+    const interval = setInterval(() => {
+      setAnalysisProgress(prev => {
+        if (prev >= 95) return 95;
+        const next = prev + Math.random() * 5;
+        
+        // Update status message based on progress
+        const msgIndex = Math.floor((next / 100) * statusMessages.length);
+        if (statusMessages[msgIndex]) setAnalysisStatus(statusMessages[msgIndex]);
+        
+        return next;
+      });
+    }, 500);
+
+    try {
+      const isVideo = mediaFiles[0].type === 'video';
+      const inputs = isVideo ? mediaFiles[0].data.split(',')[1] : mediaFiles.map(m => m.data.split(',')[1]);
+      
+      const recommendations = await analyzeSpace(inputs, refinement, isVideo);
+      setAnalysisProgress(100);
+      
+      setTimeout(() => {
+        setResult(recommendations);
+        setAnalyzing(false);
+        setAnalysisProgress(0);
+        if (refinement) setRefinementText("");
+      }, 600);
+
+      if (auth.currentUser) {
+        try {
+          await addDoc(collection(db, 'designRequests'), {
+            userId: auth.currentUser.uid,
+            mediaCount: mediaFiles.length,
+            prompt: refinement || "Advanced Multimedia Space Analysis",
+            recommendations,
+            status: "completed",
+            createdAt: serverTimestamp()
+          });
+        } catch (err) {
+          handleFirestoreError(err, OperationType.WRITE, 'designRequests');
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Analysis failed. Please try again.");
+      setAnalyzing(false);
+      setAnalysisProgress(0);
+    } finally {
+      clearInterval(interval);
+    }
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-12">
+      {/* Cropping Modal */}
+      <AnimatePresence>
+        {editingMediaIndex !== null && mediaFiles[editingMediaIndex] && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-stone-900/95 backdrop-blur-xl flex flex-col items-center justify-center p-4"
+          >
+            <div className="relative w-full max-w-4xl aspect-square bg-stone-800 rounded-3xl overflow-hidden">
+              <Cropper
+                image={mediaFiles[editingMediaIndex].data}
+                crop={crop}
+                zoom={zoom}
+                aspect={4/3}
+                onCropChange={setCrop}
+                onCropComplete={onCropComplete}
+                onZoomChange={setZoom}
+              />
+            </div>
+            
+            <div className="mt-8 flex gap-4 w-full max-w-md">
+              <button 
+                onClick={() => setEditingMediaIndex(null)}
+                className="flex-1 py-4 bg-white/10 text-white rounded-2xl font-bold hover:bg-white/20 transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleCrop}
+                className="flex-1 py-4 bg-brand-primary text-brand-cream rounded-2xl font-bold shadow-xl shadow-brand-primary/20 hover:scale-105 transition-all"
+              >
+                Apply Crop
+              </button>
+            </div>
+
+            <div className="mt-8 w-full max-w-xs">
+              <input 
+                type="range" 
+                min="1" 
+                max="3" 
+                step="0.1" 
+                value={zoom} 
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="w-full accent-brand-primary"
+              />
+              <p className="text-center text-xs text-stone-400 mt-2 uppercase tracking-widest">Zoom Control</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="text-center mb-12">
+        <h1 className="text-5xl md:text-6xl mb-4 italic font-light">AI <span className="font-serif not-italic">Analyzer</span></h1>
+        <p className="text-stone-400 text-lg max-w-2xl mx-auto leading-relaxed font-serif italic">
+          Reimagine your sanctuary with the precision of AI and the soul of artisanal craft.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        {/* Media Intake Side */}
+        <div className="space-y-8">
+          <div className="bg-white rounded-[40px] border border-stone-100 p-8 shadow-sm">
+            <div className="flex gap-4 mb-8">
+              <Tooltip content="Upload Images/Video">
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-16 h-16 rounded-2xl bg-stone-50 border border-stone-100 flex items-center justify-center text-stone-500 hover:bg-brand-primary hover:text-white transition-all"
+                >
+                  <Upload size={24} />
+                </button>
+              </Tooltip>
+              <Tooltip content={isCameraActive ? "Stop Camera" : "Live Camera"}>
+                <button 
+                  onClick={isCameraActive ? stopCamera : startCamera}
+                  className={`w-16 h-16 rounded-2xl border flex items-center justify-center transition-all ${isCameraActive ? 'bg-red-50 border-red-100 text-red-500' : 'bg-stone-50 border-stone-100 text-stone-500 hover:bg-brand-primary hover:text-white'}`}
+                >
+                  <Camera size={24} />
+                </button>
+              </Tooltip>
+              {isCameraActive && (
+                <Tooltip content="Capture Snapshot">
+                  <button 
+                    onClick={captureFrame}
+                    className="w-16 h-16 rounded-2xl bg-brand-primary text-brand-cream flex items-center justify-center animate-pulse shadow-lg"
+                  >
+                    <Plus size={24} />
+                  </button>
+                </Tooltip>
+              )}
+            </div>
+
+            <div className="aspect-video bg-stone-900 rounded-[32px] overflow-hidden relative group">
+              {isCameraActive ? (
+                <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+              ) : mediaFiles.length > 0 ? (
+                <div className="w-full h-full bg-stone-100 overflow-hidden">
+                  {mediaFiles[0].type === 'video' ? (
+                    <video src={mediaFiles[0].data} controls className="w-full h-full object-cover" />
+                  ) : (
+                    <img src={mediaFiles[0].data} className="w-full h-full object-cover" />
+                  )}
+                </div>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-stone-500 gap-4">
+                  <Video size={48} className="opacity-20" />
+                  <span className="text-sm font-medium tracking-widest uppercase opacity-40">No Input Active</span>
+                </div>
+              )}
+              <canvas ref={canvasRef} className="hidden" />
+            </div>
+
+            {/* Media Gallery */}
+            <div className="mt-8 grid grid-cols-4 gap-4 overflow-x-auto pb-4 scrollbar-hide">
+              {mediaFiles.map((file, idx) => (
+                <motion.div 
+                  key={idx} 
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="aspect-square rounded-2xl bg-stone-100 relative group overflow-hidden border border-stone-200"
+                >
+                  {file.type === 'video' ? (
+                    <div className="w-full h-full flex items-center justify-center bg-stone-800 text-white"><Play size={16} /></div>
+                  ) : (
+                    <>
+                      <img src={file.data} className="w-full h-full object-cover" />
+                      <button 
+                        onClick={() => startCrop(idx)}
+                        className="absolute bottom-2 right-2 p-2 bg-white/20 backdrop-blur-md rounded-lg text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-white/40"
+                      >
+                        <Crop size={14} />
+                      </button>
+                    </>
+                  )}
+                  <button 
+                    onClick={() => removeMedia(idx)}
+                    className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X size={12} />
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+            
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileUpload} 
+              className="hidden" 
+              accept="image/*,video/*"
+              multiple
+            />
+          </div>
+
+          <AnimatePresence>
+            {analyzing && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-4 space-y-2 overflow-hidden"
+              >
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-stone-400">
+                  <span>{analysisStatus}</span>
+                  <span>{Math.round(analysisProgress)}%</span>
+                </div>
+                <div className="h-1.5 w-full bg-stone-100 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${analysisProgress}%` }}
+                    className="h-full bg-brand-primary"
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <button
+            onClick={() => runAnalysis()}
+            disabled={mediaFiles.length === 0 || analyzing}
+            className={`w-full py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 transition-all relative overflow-hidden ${analyzing ? 'bg-stone-100 text-stone-400 cursor-not-allowed border border-stone-200' : 'bg-brand-primary text-brand-cream hover:shadow-2xl hover:shadow-brand-primary/20 shadow-lg active:scale-[0.98]'}`}
+          >
+            {analyzing && (
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${analysisProgress}%` }}
+                className="absolute left-0 top-0 bottom-0 bg-brand-primary/10 transition-all duration-300 pointer-events-none"
+              />
+            )}
+            <div className="relative z-10 flex items-center justify-center gap-3">
+              {analyzing ? (
+                <RefreshCw className="animate-spin" size={24} />
+              ) : (
+                <Sparkles size={24} />
+              )}
+              {analyzing ? `Curating your sanctuary... ${Math.round(analysisProgress)}%` : 'Transform My Space'}
+            </div>
+          </button>
+
+          {!auth.currentUser && image && (
+            <p className="text-sm text-center text-stone-400 italic">Sign in to save this analysis to your history.</p>
+          )}
+        </div>
+
+        {/* Results Side */}
+        <div className="bg-white rounded-[40px] border border-brand-primary/10 min-h-[500px] flex flex-col relative overflow-hidden shadow-sm">
+          <AnimatePresence mode="wait">
+            {analyzing ? (
+              <motion.div 
+                key="analyzing"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 flex flex-col items-center justify-center gap-6 p-12 text-center"
+              >
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-full border-4 border-brand-primary/10 border-t-brand-primary animate-spin" />
+                  <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-brand-primary" size={32} />
+                </div>
+                <div>
+                  <h3 className="text-2xl mb-2 font-serif">Reading your space...</h3>
+                  <p className="text-stone-400 italic">AI is identifying furniture placement, lighting, and style opportunities.</p>
+                </div>
+              </motion.div>
+            ) : result ? (
+              <motion.div 
+                key="result"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="p-10 overflow-y-auto max-h-[80vh]"
+              >
+                <div className="flex justify-between items-center mb-8 pb-4 border-b border-stone-100">
+                  <div className="flex items-center gap-2 text-brand-primary font-bold uppercase tracking-[0.2em] text-xs">
+                    <Sparkles size={14} /> AI Recommendation
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={handleShare}
+                      className="p-2 rounded-full hover:bg-stone-50 text-stone-400 transition-colors"
+                      title="Share Recommendations"
+                    >
+                      <Share2 size={18} />
+                    </button>
+                  </div>
+                </div>
+                <div className="prose prose-stone max-w-none prose-p:leading-relaxed prose-h3:text-2xl prose-h3:mt-8 prose-h3:mb-4 prose-h3:font-serif">
+                  <ReactMarkdown>{result}</ReactMarkdown>
+                </div>
+
+                {/* Refinement Section */}
+                <div className="mt-12 pt-10 border-t border-stone-100">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-xl bg-brand-primary/5 flex items-center justify-center text-brand-primary">
+                      <RefreshCw size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm">Refine Recommendations</h4>
+                      <p className="text-[10px] text-stone-400 uppercase tracking-widest">Tailor your results further</p>
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <textarea 
+                      value={refinementText}
+                      onChange={(e) => setRefinementText(e.target.value)}
+                      placeholder="e.g., 'more minimalist', 'add blue accents'..."
+                      className="w-full bg-stone-50 border border-stone-100 rounded-[32px] p-6 pr-16 text-sm focus:outline-brand-primary min-h-[140px] shadow-inner transition-all focus:bg-white"
+                    />
+                    <button 
+                      onClick={() => runAnalysis(refinementText)}
+                      disabled={!refinementText.trim() || analyzing}
+                      className="absolute bottom-6 right-6 w-12 h-12 rounded-2xl bg-brand-primary text-brand-cream flex items-center justify-center shadow-xl disabled:opacity-50 hover:scale-110 transition-all hover:bg-stone-900"
+                    >
+                      <Send size={20} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-12 bg-brand-primary/5 p-8 rounded-3xl border border-brand-primary/10">
+                  <h4 className="text-xl mb-4 font-serif text-brand-primary">Apply this design?</h4>
+                  <p className="text-stone-600 mb-6 text-sm">We can custom build furniture or print the art suggested above specifically for your space.</p>
+                  <div className="flex gap-3">
+                    <button className="bg-brand-primary text-brand-cream px-6 py-3 rounded-full text-sm font-bold flex items-center gap-2">
+                      Request Quote <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              <div className="flex flex-col items-center justify-center flex-1 p-12 text-center text-stone-300">
+                <Sparkles size={64} className="mb-6 opacity-20" />
+                <p className="text-lg">Upload a photo to see <br />magic happen here.</p>
+              </div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,205 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Catalog product",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "price": { "type": "number" },
+        "rating": { "type": "number" },
+        "image": { "type": "string" },
+        "description": { "type": "string" },
+        "variations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "image": { "type": "string" },
+              "price": { "type": "number" }
+            }
+          }
+        }
+      },
+      "required": ["name", "price"]
+    },
+    "BrandingService": {
+      "title": "Branding Service",
+      "description": "Available branding/printing service",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "price": { "type": "string" },
+        "desc": { "type": "string" },
+        "icon": { "type": "string" }
+      },
+      "required": ["name", "price"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "DesignRequest": {
+      "title": "Design Request",
+      "description": "AI interior design request with uploaded photo and recommendations",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "prompt": { "type": "string" },
+        "recommendations": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "imageUrl", "createdAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Custom orders for prints, furniture, jewelry, or branding",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["print", "furniture", "jewelry", "branding"] },
+        "details": { "type": "object" },
+        "status": { "type": "string", "enum": ["pending", "processing", "shipped", "delivered"] },
+        "totalAmount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "type", "details", "createdAt"]
+    },
+    "CartItem": {
+      "title": "Cart Item",
+      "description": "Items added to user's shopping cart",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "price": { "type": "number" },
+        "image": { "type": "string" },
+        "quantity": { "type": "number" },
+        "deliveryAddress": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "productId", "quantity", "createdAt"]
+    },
+    "WishlistItem": {
+      "title": "Wishlist Item",
+      "description": "Products saved for later",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "price": { "type": "number" },
+        "image": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "productId", "createdAt"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "User reviews for products",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userPhoto": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "rating", "comment", "createdAt"]
+    },
+    "Address": {
+      "title": "Address",
+      "description": "User delivery address",
+      "type": "object",
+      "properties": {
+        "label": { "type": "string" },
+        "address": { "type": "string" },
+        "isDefault": { "type": "boolean" }
+      }
+    },
+    "Service": {
+      "title": "Service",
+      "description": "Artisanal service offered",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "icon": { "type": "string" },
+        "image": { "type": "string" },
+        "priceRange": { "type": "string" },
+        "order": { "type": "number" }
+      }
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Shop product category",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "order": { "type": "number" }
+      }
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "designRequests/{requestId}": {
+      "schema": "DesignRequest",
+      "description": "AI space analysis results"
+    },
+    "orders/{orderId}": {
+      "schema": "Order",
+      "description": "Product and service orders"
+    },
+    "users/{userId}/addresses/{addressId}": {
+      "schema": "Address",
+      "description": "User's saved delivery addresses"
+    },
+    "services/{serviceId}": {
+      "schema": "Service",
+      "description": "Available artisanal services"
+    },
+    "categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Product categories for the shop"
+    },
+    "cart/{cartItemId}": {
+      "schema": "CartItem",
+      "description": "User's shopping cart items"
+    },
+    "products/{productId}": {
+      "schema": "Product",
+      "description": "Configurable catalog products"
+    },
+    "products/{productId}/reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Customer product reviews"
+    },
+    "wishlist/{wishlistItemId}": {
+      "schema": "WishlistItem",
+      "description": "User product favorites"
+    },
+    "services/{serviceId}": {
+      "schema": "BrandingService",
+      "description": "Configurable branding services"
+    }
+  }
+}
