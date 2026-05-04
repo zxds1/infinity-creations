@@ -230,7 +230,7 @@ export default function Shop() {
 
     try {
       await assertProductExists(product.id);
-      await addDoc(collection(db, 'orders'), {
+      await addDoc(collection(db, 'purchaseRequests'), {
         userId: auth.currentUser.uid,
         type: product.category.toLowerCase().includes('furniture') ? 'furniture' : (product.category.toLowerCase().includes('jewelry') ? 'jewelry' : 'print'),
         details: {
@@ -238,7 +238,7 @@ export default function Shop() {
           productName: product.name,
           price: product.price
         },
-        status: "pending",
+        status: "requested",
         totalAmount: product.price,
         createdAt: serverTimestamp()
       });
@@ -247,7 +247,7 @@ export default function Shop() {
         productId: product.id,
         metadata: { source: 'shop-request', category: product.category, price: product.price }
       }).catch(() => undefined);
-      toast.success("Order request sent! We will contact you shortly.");
+      toast.success("Request sent. Checkout from cart when you are ready to pay.");
       setSelectedProduct(null);
     } catch (error) {
       console.error(error);

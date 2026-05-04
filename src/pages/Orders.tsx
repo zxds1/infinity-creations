@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db, auth, query, collection, where, onSnapshot, OperationType, handleFirestoreError, updateDoc, doc, limit, serverTimestamp, addDoc } from '../lib/firebase';
+import { db, auth, query, collection, where, onSnapshot, OperationType, handleFirestoreError, serverTimestamp, addDoc } from '../lib/firebase';
 import { Package, Clock, CheckCircle2, ChevronRight, XCircle, Filter, RefreshCw, ArrowRight, Truck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
@@ -12,6 +12,15 @@ interface Order {
   details: any;
   status: string;
   totalAmount?: number;
+  amounts?: {
+    currency: string;
+    subtotal: number;
+    deliveryFee: number;
+    total: number;
+  };
+  paymentStatus?: string;
+  fulfillmentStatus?: string;
+  deliveryEstimate?: string;
   createdAt: any;
 }
 
@@ -61,50 +70,22 @@ export default function Orders() {
     return () => unsubscribe();
   }, [authReady, user]);
 
-  const handleCancelOrder = async (orderId: string) => {
-    if (!window.confirm("Are you sure you want to cancel this order?")) return;
-
-    try {
-      await updateDoc(doc(db, 'orders', orderId), {
-        status: 'cancelled',
-        updatedAt: new Date()
-      });
-      toast.success("Order cancelled");
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `orders/${orderId}`);
-      toast.error("Failed to cancel order");
-    }
-  };
-
-  const handleReturnOrder = async (orderId: string) => {
-    if (!window.confirm("Are you sure you want to request a return for this order?")) return;
-
-    try {
-      await updateDoc(doc(db, 'orders', orderId), {
-        status: 'Returned',
-        updatedAt: new Date()
-      });
-      toast.success("Return request submitted");
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `orders/${orderId}`);
-      toast.error("Failed to submit return request");
-    }
-  };
-
   const handleReorder = async (order: Order) => {
     if (!auth.currentUser) return;
     try {
-      if (order.details.productId) {
-        await assertProductExists(order.details.productId);
+      const firstItem = order.details?.items?.[0];
+      const productId = firstItem?.productId || order.details.productId;
+      if (productId) {
+        await assertProductExists(productId);
       }
       const cartItem = {
         userId: auth.currentUser.uid,
-        productId: order.details.productId || "reorder",
-        productName: order.details.productName || "Reordered Item",
-        price: order.totalAmount || 0,
-        image: order.details.image || "",
-        quantity: order.details.quantity || 1,
-        deliveryAddress: order.details.deliveryAddress || "",
+        productId,
+        productName: firstItem?.productName || order.details.productName || "Reordered Item",
+        price: firstItem?.unitPrice || order.totalAmount || 0,
+        image: firstItem?.image || order.details.image || "",
+        quantity: firstItem?.quantity || order.details.quantity || 1,
+        deliveryAddress: order.details.deliveryAddress || order.details?.deliveryAddress || "",
         createdAt: serverTimestamp()
       };
       await addDoc(collection(db, 'cart'), cartItem);
@@ -123,10 +104,34 @@ export default function Orders() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending': return <Clock className="text-amber-500" size={18} />;
+      case 'pending_payment': return <Clock className="text-amber-500" size={18} />;
+      case 'paid': return <CheckCircle2 className="text-emerald-500" size={18} />;
+      case 'payment_failed': return <XCircle className="text-red-500" size={18} />;
+      case 'processing': return <RefreshCw className="text-blue-500" size={18} />;
+      case 'shipped': return <Truck className="text-blue-500" size={18} />;
       case 'delivered': return <CheckCircle2 className="text-emerald-500" size={18} />;
-      case 'cancelled': return <XCircle className="text-red-500" size={18} />;
       default: return <Package className="text-blue-500" size={18} />;
+    }
+  };
+
+  const getOrderTitle = (order: Order) => {
+    const items = order.details?.items;
+    if (Array.isArray(items) && items.length > 0) {
+      return items.length === 1 ? items[0].productName : `${items[0].productName} + ${items.length - 1} more`;
+    }
+    return order.details?.productName || order.details?.serviceName || "Checkout Order";
+  };
+
+  const getOrderTotal = (order: Order) => order.amounts?.total || order.totalAmount || 0;
+
+  const getTimelineProgress = (status: string) => {
+    switch ((status || '').toLowerCase()) {
+      case 'pending_payment': return '0%';
+      case 'paid': return '25%';
+      case 'processing': return '50%';
+      case 'shipped': return '75%';
+      case 'delivered': return '100%';
+      default: return '0%';
     }
   };
 
@@ -145,19 +150,27 @@ export default function Orders() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h1 className="text-5xl md:text-6xl mb-4">Your <span className="italic font-light">Activity</span></h1>
-            <p className="text-stone-500">Confirmed intent and custom request history. This is not a payment ledger.</p>
+            <p className="text-stone-500">Paid orders, payment status, fulfillment progress, and delivery tracking.</p>
           </div>
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
               <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 w-16">Status</span>
               <div className="flex flex-wrap gap-2">
-                {['All', 'Pending', 'Delivered', 'Cancelled', 'Shipped'].map(f => (
+                {[
+                  { label: 'All', value: 'All' },
+                  { label: 'Pending Payment', value: 'pending_payment' },
+                  { label: 'Paid', value: 'Paid' },
+                  { label: 'Processing', value: 'Processing' },
+                  { label: 'Shipped', value: 'Shipped' },
+                  { label: 'Delivered', value: 'Delivered' },
+                  { label: 'Payment Failed', value: 'payment_failed' }
+                ].map(f => (
                   <button
-                    key={f}
-                    onClick={() => setStatusFilter(f)}
-                    className={`px-4 py-1 rounded-full text-[10px] font-bold transition-all border ${statusFilter === f ? 'bg-brand-primary text-brand-cream border-brand-primary' : 'bg-transparent text-stone-500 border-stone-200 hover:border-brand-primary'}`}
+                    key={f.value}
+                    onClick={() => setStatusFilter(f.value)}
+                    className={`px-4 py-1 rounded-full text-[10px] font-bold transition-all border ${statusFilter === f.value ? 'bg-brand-primary text-brand-cream border-brand-primary' : 'bg-transparent text-stone-500 border-stone-200 hover:border-brand-primary'}`}
                   >
-                    {f}
+                    {f.label}
                   </button>
                 ))}
               </div>
@@ -165,7 +178,7 @@ export default function Orders() {
             <div className="flex items-center gap-3">
               <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 w-16">Type</span>
               <div className="flex flex-wrap gap-2">
-                {['All', 'Furniture', 'Branding', 'Print', 'Jewelry'].map(f => (
+                {['All', 'Checkout'].map(f => (
                   <button
                     key={f}
                     onClick={() => setTypeFilter(f)}
@@ -190,7 +203,7 @@ export default function Orders() {
             <Package size={40} />
           </div>
           <h3 className="text-2xl mb-2 font-serif">No {statusFilter !== 'All' ? statusFilter.toLowerCase() : ''} activity yet</h3>
-          <p className="text-stone-400">Compare products or request a custom service to start building your activity trail.</p>
+          <p className="text-stone-400">Start checkout from your cart to create a server-verified order.</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -215,7 +228,7 @@ export default function Orders() {
                       <span className="text-stone-400 text-xs font-medium">#{order.id.slice(-6).toUpperCase()}</span>
                     </div>
                     <h3 className="text-xl font-bold text-stone-800">
-                      {order.details.productName || order.details.serviceName || "Custom Project"}
+                      {getOrderTitle(order)}
                     </h3>
                     
                     {/* Enhanced Status Timeline */}
@@ -225,23 +238,19 @@ export default function Orders() {
                         <div className="absolute top-[15px] left-0 w-full h-[2px] bg-stone-100 z-0" />
                         <div 
                           className={`absolute top-[15px] left-0 h-[2px] z-0 transition-all duration-1000 ${
-                            order.status === 'cancelled' ? 'bg-red-200' : 'bg-brand-primary'
+                            order.status === 'payment_failed' ? 'bg-red-200' : 'bg-brand-primary'
                           }`} 
-                          style={{ 
-                            width: order.status === 'pending' ? '0%' : 
-                                  order.status === 'processing' ? '33.3%' : 
-                                  order.status === 'shipped' ? '66.6%' : 
-                                  order.status === 'delivered' ? '100%' : '0%' 
-                          }} 
+                          style={{ width: getTimelineProgress(order.status) }}
                         />
                         
                         {[
-                          { id: 'pending', label: 'Intent Captured', icon: Clock },
-                          { id: 'processing', label: 'Follow-up Active', icon: RefreshCw },
-                          { id: 'shipped', label: 'In Fulfillment', icon: Truck },
-                          { id: 'delivered', label: 'Closed', icon: CheckCircle2 }
+                          { id: 'pending_payment', label: 'Awaiting Payment', icon: Clock },
+                          { id: 'paid', label: 'Payment Verified', icon: CheckCircle2 },
+                          { id: 'processing', label: 'Processing', icon: RefreshCw },
+                          { id: 'shipped', label: 'Shipped', icon: Truck },
+                          { id: 'delivered', label: 'Delivered', icon: CheckCircle2 }
                         ].map((step, idx) => {
-                          const steps = ['pending', 'processing', 'shipped', 'delivered'];
+                          const steps = ['pending_payment', 'paid', 'processing', 'shipped', 'delivered'];
                           const currentIdx = steps.indexOf((order.status || '').toLowerCase());
                           const isCompleted = idx < currentIdx;
                           const isCurrent = idx === currentIdx;
@@ -250,7 +259,7 @@ export default function Orders() {
                           return (
                             <div key={step.id} className="relative z-10 flex flex-col items-center">
                               <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white transition-all duration-700 ${
-                                order.status === 'cancelled' ? 'bg-stone-200 text-stone-400' :
+                                order.status === 'payment_failed' ? 'bg-stone-200 text-stone-400' :
                                 isCompleted || isCurrent ? 'bg-brand-primary text-brand-cream scale-110 shadow-lg shadow-brand-primary/20' : 'bg-stone-100 text-stone-300'
                               }`}>
                                 {isCompleted ? <CheckCircle2 size={14} /> : <StepIcon size={14} className={isCurrent ? 'animate-pulse' : ''} />}
@@ -285,7 +294,7 @@ export default function Orders() {
                       {getStatusIcon(order.status)}
                       <span className="font-bold text-sm uppercase tracking-widest text-stone-600">{order.status}</span>
                     </div>
-                    {order.totalAmount && <span className="text-lg font-bold text-brand-primary">KSH {order.totalAmount}</span>}
+                    {getOrderTotal(order) > 0 && <span className="text-lg font-bold text-brand-primary">KSH {getOrderTotal(order)}</span>}
                   </div>
 
                   <div className={`p-4 rounded-full hover:bg-stone-50 transition-all text-stone-300 ${expandedOrderId === order.id ? 'rotate-90' : ''}`}>
@@ -306,8 +315,8 @@ export default function Orders() {
                           <h4 className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-4">Activity Details</h4>
                           <div className="bg-stone-50 p-6 rounded-3xl space-y-4">
                             <div className="flex justify-between items-center">
-                              <span className="text-sm font-medium text-stone-600">{order.details.productName || order.details.serviceName}</span>
-                              <span className="text-sm font-bold text-stone-900">x{order.details.quantity || 1}</span>
+                              <span className="text-sm font-medium text-stone-600">{getOrderTitle(order)}</span>
+                              <span className="text-sm font-bold text-stone-900">x{order.details?.items?.length || order.details?.quantity || 1}</span>
                             </div>
                             {order.details.selectedColor && (
                               <div className="flex items-center gap-2">
@@ -317,7 +326,11 @@ export default function Orders() {
                             )}
                             <div className="pt-4 border-t border-stone-100 flex justify-between">
                               <span className="text-sm font-bold">Total</span>
-                              <span className="text-sm font-bold text-brand-primary">KSH {order.totalAmount}</span>
+                              <span className="text-sm font-bold text-brand-primary">KSH {getOrderTotal(order)}</span>
+                            </div>
+                            <div className="pt-4 border-t border-stone-100 flex justify-between">
+                              <span className="text-sm font-bold">Payment</span>
+                              <span className="text-sm font-bold uppercase text-stone-500">{order.paymentStatus || order.status}</span>
                             </div>
                           </div>
                         </div>
@@ -328,6 +341,9 @@ export default function Orders() {
                             <p className="text-sm leading-relaxed text-stone-600">
                               {order.details.deliveryAddress || "Self collection at Maridadi Studio, Nairobi"}
                             </p>
+                            {order.deliveryEstimate && (
+                              <p className="mt-4 text-xs font-bold uppercase tracking-widest text-brand-primary">{order.deliveryEstimate}</p>
+                            )}
                           </div>
 
                           <div className="mt-8 flex gap-4">
@@ -339,19 +355,11 @@ export default function Orders() {
                                 <RefreshCw size={18} /> Reorder Now
                               </button>
                             )}
-                            {order.status === 'pending' && (
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); handleCancelOrder(order.id); }}
-                                className="flex-1 bg-red-50 text-red-500 py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-red-100 transition-all"
-                              >
-                                <XCircle size={18} /> Cancel Order
-                              </button>
-                            )}
                             <button 
-                              onClick={(e) => { e.stopPropagation(); toast.success("Invoice download started..."); }}
+                              onClick={(e) => { e.stopPropagation(); toast.success("Support request noted"); }}
                               className="px-6 py-4 rounded-2xl border border-stone-200 text-stone-400 font-bold text-sm hover:bg-stone-50 transition-all"
                             >
-                              Download Invoice
+                              Contact Support
                             </button>
                           </div>
                         </div>

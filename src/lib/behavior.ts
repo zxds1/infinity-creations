@@ -7,7 +7,11 @@ export type BehaviorEventType =
   | 'cart'
   | 'intent'
   | 'analyzer'
-  | 'branding';
+  | 'branding'
+  | 'checkout_started'
+  | 'payment_attempted'
+  | 'payment_success'
+  | 'payment_failed';
 
 export interface DesignPreferences {
   styles: string[];

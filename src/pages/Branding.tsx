@@ -74,7 +74,7 @@ export default function Branding() {
         targetCustomers: sellerProfile.targetCustomers.trim()
       };
 
-      await addDoc(collection(db, 'orders'), {
+      await addDoc(collection(db, 'purchaseRequests'), {
         userId: auth.currentUser.uid,
         type: 'branding',
         details: {
@@ -84,7 +84,7 @@ export default function Branding() {
           referenceImage: image,
           sellerSignal
         },
-        status: "pending",
+        status: "requested",
         createdAt: serverTimestamp()
       });
       await addDoc(collection(db, 'sellerSignals'), {
