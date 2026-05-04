@@ -3,6 +3,14 @@ import { ShoppingBag, Star, Plus, MapPin, Package, Heart, Truck, Info, Minus, Ch
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import { db, auth, collection, getDocs, addDoc, serverTimestamp, query, where, orderBy, deleteDoc, doc } from '../lib/firebase';
+import {
+  assertProductExists,
+  getProductInsightLabels,
+  getProductPreferenceScore,
+  getStoredPreferences,
+  trackEvent,
+  type DesignPreferences
+} from '../lib/behavior';
 
 export default function Shop() {
   const [activeCategory, setActiveCategory] = useState("All");
@@ -16,6 +24,15 @@ export default function Shop() {
   const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
   const [isZoomed, setIsZoomed] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [compareIds, setCompareIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      return JSON.parse(window.localStorage.getItem('maridadi.compareIds') || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const [preferences, setPreferences] = useState<DesignPreferences>(() => getStoredPreferences());
   
   // Cart state for the current item being added
   const [quantity, setQuantity] = useState(1);
@@ -46,14 +63,27 @@ export default function Shop() {
   }, []);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem('maridadi.compareIds', JSON.stringify(compareIds));
+  }, [compareIds]);
+
+  useEffect(() => {
     if (selectedProduct) {
       fetchReviews(selectedProduct.id);
     }
   }, [selectedProduct]);
 
-  const filteredProducts = activeCategory === "All" 
-    ? products 
-    : products.filter(p => p.category === activeCategory);
+  const filteredProducts = (activeCategory === "All"
+    ? products
+    : products.filter(p => p.category === activeCategory)
+  ).slice().sort((a, b) => {
+    const scoreDelta = getProductPreferenceScore(b, preferences) - getProductPreferenceScore(a, preferences);
+    return scoreDelta || Number(b.rating || 0) - Number(a.rating || 0);
+  });
+
+  const comparedProducts = compareIds
+    .map(id => products.find(product => product.id === id))
+    .filter(Boolean);
 
   const handleProductClick = (product: any) => {
     setSelectedProduct(product);
@@ -61,6 +91,19 @@ export default function Shop() {
     setDeliveryAddress("");
     setIsZoomed(false);
     setSelectedColor(product.variations?.[0]?.name || null);
+    trackEvent({ eventType: 'view', productId: product.id, metadata: { category: product.category } }).catch(() => undefined);
+  };
+
+  const handleToggleCompare = (e: React.MouseEvent, product: any) => {
+    e.stopPropagation();
+    const exists = compareIds.includes(product.id);
+    const next = exists ? compareIds.filter(id => id !== product.id) : [...compareIds, product.id].slice(-4);
+    setCompareIds(next);
+    trackEvent({
+      eventType: 'compare',
+      productId: product.id,
+      metadata: { action: exists ? 'remove' : 'add', category: product.category }
+    }).catch(() => undefined);
   };
 
   const fetchReviews = async (productId: string) => {
@@ -84,6 +127,7 @@ export default function Shop() {
 
     const isWishlisted = wishlist.includes(product.id);
     try {
+      await assertProductExists(product.id);
       if (isWishlisted) {
         const wishSnap = await getDocs(query(collection(db, 'wishlist'), where('userId', '==', auth.currentUser.uid), where('productId', '==', product.id)));
         wishSnap.forEach(async (d) => await deleteDoc(doc(db, 'wishlist', d.id)));
@@ -101,6 +145,11 @@ export default function Shop() {
         setWishlist(prev => [...prev, product.id]);
         toast.success("Added to wishlist!");
       }
+      trackEvent({
+        eventType: 'wishlist',
+        productId: product.id,
+        metadata: { action: isWishlisted ? 'remove' : 'add', category: product.category }
+      }).catch(() => undefined);
     } catch (err) {
       toast.error("Action failed");
     }
@@ -146,6 +195,7 @@ export default function Shop() {
     const finalPrice = currentVariation?.price || product.price;
 
     try {
+      await assertProductExists(product.id);
       await addDoc(collection(db, 'cart'), {
         userId: auth.currentUser.uid,
         productId: product.id,
@@ -157,6 +207,11 @@ export default function Shop() {
         variationName: selectedColor,
         createdAt: serverTimestamp()
       });
+      trackEvent({
+        eventType: 'cart',
+        productId: product.id,
+        metadata: { quantity, variationName: selectedColor, category: product.category }
+      }).catch(() => undefined);
       toast.success(`${product.name} added to cart!`);
       setQuantity(1);
       setDeliveryAddress("");
@@ -174,6 +229,7 @@ export default function Shop() {
     }
 
     try {
+      await assertProductExists(product.id);
       await addDoc(collection(db, 'orders'), {
         userId: auth.currentUser.uid,
         type: product.category.toLowerCase().includes('furniture') ? 'furniture' : (product.category.toLowerCase().includes('jewelry') ? 'jewelry' : 'print'),
@@ -186,6 +242,11 @@ export default function Shop() {
         totalAmount: product.price,
         createdAt: serverTimestamp()
       });
+      trackEvent({
+        eventType: 'intent',
+        productId: product.id,
+        metadata: { source: 'shop-request', category: product.category, price: product.price }
+      }).catch(() => undefined);
       toast.success("Order request sent! We will contact you shortly.");
       setSelectedProduct(null);
     } catch (error) {
@@ -215,9 +276,20 @@ export default function Shop() {
           </div>
         </div>
         <div className="flex items-center gap-2 text-stone-400 font-bold uppercase tracking-widest text-xs">
-          <MapPin size={16} /> Delivery available worldwide
+          <MapPin size={16} /> Market signal capture hub
         </div>
       </div>
+
+      {(preferences.styles.length > 0 || preferences.colors.length > 0 || preferences.layouts.length > 0) && (
+        <div className="mb-10 flex flex-wrap items-center gap-3 border-y border-brand-primary/10 py-4">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-primary">Ranked by analyzer</span>
+          {[...preferences.styles, ...preferences.colors, ...preferences.layouts].slice(0, 6).map(term => (
+            <span key={term} className="rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-stone-500 border border-stone-100">
+              {term}
+            </span>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-20">
@@ -258,6 +330,13 @@ export default function Shop() {
                 </div>
 
                 <div className="absolute top-6 right-6 flex flex-col gap-2 z-10">
+                  <button
+                    onClick={(e) => handleToggleCompare(e, product)}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-sm ${compareIds.includes(product.id) ? 'bg-brand-primary text-brand-cream scale-110' : 'bg-white text-stone-400 hover:text-brand-primary'}`}
+                    title="Compare"
+                  >
+                    {compareIds.includes(product.id) ? <Check size={18} /> : <Info size={18} />}
+                  </button>
                   <button 
                     onClick={(e) => handleToggleWishlist(e, product)}
                     className={`w-12 h-12 rounded-full bg-white flex items-center justify-center transition-all shadow-sm ${wishlist.includes(product.id) ? 'text-red-500 scale-110' : 'text-stone-400 hover:text-red-500'}`}
@@ -271,6 +350,13 @@ export default function Shop() {
                     <Plus size={24} />
                   </button>
                 </div>
+              <div className="absolute top-6 left-6 right-24 flex flex-wrap gap-2">
+                {getProductInsightLabels(product, preferences, idx).map(label => (
+                  <span key={label} className="bg-white/85 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest text-stone-600 shadow-sm">
+                    {label}
+                  </span>
+                ))}
+              </div>
               <div className="absolute bottom-6 left-6 right-6">
                 <div className="bg-white/80 backdrop-blur-md p-4 rounded-2xl flex justify-between items-center shadow-sm">
                   <span className="font-bold text-lg">KSH {product.price}</span>
@@ -281,11 +367,58 @@ export default function Shop() {
               </div>
             </div>
             <h3 className="text-2xl mb-1">{product.name}</h3>
-            <p className="text-stone-400 text-sm font-medium uppercase tracking-widest">{product.category}</p>
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-stone-400 text-sm font-medium uppercase tracking-widest">{product.category}</p>
+              <button
+                onClick={(e) => handleToggleCompare(e, product)}
+                className="text-[10px] font-black uppercase tracking-widest text-brand-primary hover:text-stone-900 transition-colors"
+              >
+                {compareIds.includes(product.id) ? 'Compared' : 'Compare'}
+              </button>
+            </div>
           </motion.div>
         ))}
         </div>
       )}
+
+      <AnimatePresence>
+        {comparedProducts.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
+            className="fixed bottom-6 left-1/2 z-[70] w-[calc(100%-2rem)] max-w-4xl -translate-x-1/2 rounded-3xl bg-stone-900 text-white shadow-2xl"
+          >
+            <div className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Comparison set</div>
+                <div className="mt-1 text-sm font-bold">{comparedProducts.length} product signal{comparedProducts.length === 1 ? '' : 's'} selected</div>
+              </div>
+              <div className="flex min-w-0 flex-1 gap-3 overflow-x-auto md:justify-end">
+                {comparedProducts.map((product: any) => (
+                  <button
+                    key={product.id}
+                    onClick={(e) => handleToggleCompare(e, product)}
+                    className="flex min-w-[180px] items-center gap-3 rounded-2xl bg-white/10 p-2 text-left hover:bg-white/15"
+                  >
+                    <img src={product.image} alt={product.name} className="h-12 w-12 rounded-xl object-cover" referrerPolicy="no-referrer" />
+                    <div className="min-w-0">
+                      <div className="truncate text-xs font-bold">{product.name}</div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-white/40">KSH {product.price}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setCompareIds([])}
+                className="rounded-2xl bg-white px-5 py-3 text-[10px] font-black uppercase tracking-widest text-stone-900"
+              >
+                Clear
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Product Detail Modal */}
       <AnimatePresence>
@@ -398,12 +531,21 @@ export default function Shop() {
                   {selectedProduct.description}
                 </p>
 
+                <div className="mb-8 grid grid-cols-1 gap-3">
+                  {getProductInsightLabels(selectedProduct, preferences, 0).map(label => (
+                    <div key={label} className="flex items-center gap-3 rounded-2xl border border-stone-100 bg-white p-4 text-sm font-bold text-stone-700">
+                      <Info size={16} className="text-brand-primary" />
+                      {label}
+                    </div>
+                  ))}
+                </div>
+
                 {/* Prominent Add to Cart for Modal */}
                 <button 
                   onClick={() => handleAddToCart(selectedProduct)}
                   className="w-full bg-brand-primary text-brand-cream py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 hover:scale-[1.02] transition-transform shadow-xl shadow-brand-primary/20 mb-8"
                 >
-                  <ShoppingBag size={24} /> Add to Cart
+                  <ShoppingBag size={24} /> Confirm Interest
                 </button>
 
                 {/* Custom Options: Quantity & Address */}
@@ -502,13 +644,13 @@ export default function Shop() {
                       onClick={() => handleAddToCart(selectedProduct)}
                       className="bg-stone-100 text-stone-900 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 hover:bg-stone-200 transition-colors"
                     >
-                      <Plus size={20} /> Cart
+                      <Plus size={20} /> Intent
                     </button>
                     <button 
                       onClick={() => handleOrder(selectedProduct)}
                       className="bg-brand-primary text-brand-cream py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shadow-lg shadow-brand-primary/20"
                     >
-                      <ShoppingBag size={20} /> Buy
+                      <ShoppingBag size={20} /> Request
                     </button>
                   </div>
                   <button className="w-full border border-stone-200 text-stone-600 py-4 rounded-2xl font-bold hover:bg-stone-50 transition-colors">

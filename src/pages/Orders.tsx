@@ -3,6 +3,8 @@ import { db, auth, query, collection, where, onSnapshot, OperationType, handleFi
 import { Package, Clock, CheckCircle2, ChevronRight, XCircle, Filter, RefreshCw, ArrowRight, Truck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
+import { onAuthStateChanged, type User } from 'firebase/auth';
+import { assertProductExists, trackEvent } from '../lib/behavior';
 
 interface Order {
   id: string;
@@ -19,11 +21,26 @@ export default function Orders() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [typeFilter, setTypeFilter] = useState('All');
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
-    const q = auth.currentUser 
-      ? query(collection(db, 'orders'), where('userId', '==', auth.currentUser.uid))
-      : query(collection(db, 'orders'), limit(10)); // Show some orders for testing if not logged in
+    const unsubscribe = onAuthStateChanged(auth, currentUser => {
+      setUser(currentUser);
+      setAuthReady(true);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!authReady) return;
+    if (!user) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
+
+    const q = query(collection(db, 'orders'), where('userId', '==', user.uid));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const ordersData = snapshot.docs.map(doc => ({
@@ -42,7 +59,7 @@ export default function Orders() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [authReady, user]);
 
   const handleCancelOrder = async (orderId: string) => {
     if (!window.confirm("Are you sure you want to cancel this order?")) return;
@@ -77,6 +94,9 @@ export default function Orders() {
   const handleReorder = async (order: Order) => {
     if (!auth.currentUser) return;
     try {
+      if (order.details.productId) {
+        await assertProductExists(order.details.productId);
+      }
       const cartItem = {
         userId: auth.currentUser.uid,
         productId: order.details.productId || "reorder",
@@ -88,6 +108,7 @@ export default function Orders() {
         createdAt: serverTimestamp()
       };
       await addDoc(collection(db, 'cart'), cartItem);
+      trackEvent({ eventType: 'cart', productId: cartItem.productId, metadata: { source: 'activity-reorder' } }).catch(() => undefined);
       toast.success("Added to cart for reorder!");
     } catch (err) {
       toast.error("Failed to reorder");
@@ -109,11 +130,11 @@ export default function Orders() {
     }
   };
 
-  if (!auth.currentUser && false) { // Bypass for testing
+  if (authReady && !user) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-24 text-center">
-        <h1 className="text-4xl mb-6">Sign in to view orders</h1>
-        <p className="text-stone-500">Track your custom furniture, branding, and art requests here.</p>
+        <h1 className="text-4xl mb-6">Sign in to view activity</h1>
+        <p className="text-stone-500">Track confirmed intent, custom requests, and follow-up status here.</p>
       </div>
     );
   }
@@ -123,8 +144,8 @@ export default function Orders() {
       <div className="mb-12 flex flex-col gap-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h1 className="text-5xl md:text-6xl mb-4">Your <span className="italic font-light">Journey</span></h1>
-            <p className="text-stone-500">Track the progress of your masterpieces.</p>
+            <h1 className="text-5xl md:text-6xl mb-4">Your <span className="italic font-light">Activity</span></h1>
+            <p className="text-stone-500">Confirmed intent and custom request history. This is not a payment ledger.</p>
           </div>
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
@@ -168,8 +189,8 @@ export default function Orders() {
           <div className="w-20 h-20 rounded-full bg-stone-50 flex items-center justify-center mx-auto mb-6 text-stone-300">
             <Package size={40} />
           </div>
-          <h3 className="text-2xl mb-2 font-serif">No {statusFilter !== 'All' ? statusFilter.toLowerCase() : ''} orders yet</h3>
-          <p className="text-stone-400">Your custom creations will appear here once requested.</p>
+          <h3 className="text-2xl mb-2 font-serif">No {statusFilter !== 'All' ? statusFilter.toLowerCase() : ''} activity yet</h3>
+          <p className="text-stone-400">Compare products or request a custom service to start building your activity trail.</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -215,10 +236,10 @@ export default function Orders() {
                         />
                         
                         {[
-                          { id: 'pending', label: 'Order Placed', icon: Clock },
-                          { id: 'processing', label: 'Artisans at Work', icon: RefreshCw },
-                          { id: 'shipped', label: 'On its Way', icon: Truck },
-                          { id: 'delivered', label: 'Received', icon: CheckCircle2 }
+                          { id: 'pending', label: 'Intent Captured', icon: Clock },
+                          { id: 'processing', label: 'Follow-up Active', icon: RefreshCw },
+                          { id: 'shipped', label: 'In Fulfillment', icon: Truck },
+                          { id: 'delivered', label: 'Closed', icon: CheckCircle2 }
                         ].map((step, idx) => {
                           const steps = ['pending', 'processing', 'shipped', 'delivered'];
                           const currentIdx = steps.indexOf((order.status || '').toLowerCase());
@@ -282,7 +303,7 @@ export default function Orders() {
                     >
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div>
-                          <h4 className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-4">Order Details</h4>
+                          <h4 className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-4">Activity Details</h4>
                           <div className="bg-stone-50 p-6 rounded-3xl space-y-4">
                             <div className="flex justify-between items-center">
                               <span className="text-sm font-medium text-stone-600">{order.details.productName || order.details.serviceName}</span>

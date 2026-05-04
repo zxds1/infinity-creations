@@ -3,6 +3,7 @@ import { Paintbrush, Truck, Bike, Megaphone, Image as ImageIcon, Send, ArrowRigh
 import { motion } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import { auth, db, collection, addDoc, serverTimestamp, getDocs } from '../lib/firebase';
+import { trackEvent } from '../lib/behavior';
 
 export default function Branding() {
   const [brandingServices, setBrandingServices] = useState<any[]>([]);
@@ -11,6 +12,11 @@ export default function Branding() {
   const [image, setImage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sellerProfile, setSellerProfile] = useState({
+    businessType: '',
+    positioning: '',
+    targetCustomers: ''
+  });
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -61,23 +67,42 @@ export default function Branding() {
 
     setSubmitting(true);
     try {
+      const serviceName = selectedService.name || selectedService.title || 'Branding service';
+      const sellerSignal = {
+        businessType: sellerProfile.businessType.trim(),
+        positioning: sellerProfile.positioning.trim(),
+        targetCustomers: sellerProfile.targetCustomers.trim()
+      };
+
       await addDoc(collection(db, 'orders'), {
         userId: auth.currentUser.uid,
         type: 'branding',
         details: {
           serviceId: selectedService.id,
-          serviceName: selectedService.name,
+          serviceName,
           userDescription: description,
-          referenceImage: image
+          referenceImage: image,
+          sellerSignal
         },
         status: "pending",
         createdAt: serverTimestamp()
       });
+      await addDoc(collection(db, 'sellerSignals'), {
+        userId: auth.currentUser.uid,
+        serviceId: selectedService.id,
+        serviceName,
+        ...sellerSignal,
+        createdAt: serverTimestamp()
+      });
+      trackEvent({
+        eventType: 'branding',
+        metadata: { serviceId: selectedService.id, serviceName, ...sellerSignal }
+      }).catch(() => undefined);
       toast.success("Branding request submitted! Our designers will contact you.");
       setDescription("");
       setImage(null);
+      setSellerProfile({ businessType: '', positioning: '', targetCustomers: '' });
     } catch (error) {
-      console.error(error);
       toast.error("Submission failed");
     } finally {
       setSubmitting(false);
@@ -90,7 +115,7 @@ export default function Branding() {
         <div>
           <h1 className="text-6xl md:text-8xl mb-8 leading-[0.9]">Transform <br /><span className="italic font-light">Everything</span></h1>
           <p className="text-xl text-stone-500 mb-12 max-w-lg leading-relaxed">
-            Professional branding services for your business, vehicle, or personal space. We design, we print, we brand.
+            Professional branding services that also help Maridadi understand seller demand, positioning, and customer fit.
           </p>
 
           <div className="space-y-4">
@@ -111,8 +136,8 @@ export default function Branding() {
                       <IconComp size={24} />
                     </div>
                     <div>
-                      <h3 className="font-bold text-lg">{service.name}</h3>
-                      <p className="text-stone-400 text-sm">{service.price}</p>
+                      <h3 className="font-bold text-lg">{service.name || service.title}</h3>
+                      <p className="text-stone-400 text-sm">{service.price || service.priceRange}</p>
                     </div>
                   </div>
                   {selectedService?.id === service.id && <ArrowRight className="text-brand-primary" size={20} />}
@@ -162,6 +187,36 @@ export default function Branding() {
                   placeholder="Tell us about the project, dimensions, colors, or your boda boda model..."
                   className="w-full bg-white/10 border border-white/20 rounded-2xl p-4 min-h-[120px] text-white placeholder:text-white/30 focus:outline-none focus:border-white transition-colors text-sm"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase mb-2 tracking-widest text-white/50">Business Type</label>
+                  <input
+                    value={sellerProfile.businessType}
+                    onChange={(e) => setSellerProfile({ ...sellerProfile, businessType: e.target.value })}
+                    placeholder="Salon, cafe, boda fleet..."
+                    className="w-full bg-white/10 border border-white/20 rounded-2xl p-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase mb-2 tracking-widest text-white/50">Positioning</label>
+                  <input
+                    value={sellerProfile.positioning}
+                    onChange={(e) => setSellerProfile({ ...sellerProfile, positioning: e.target.value })}
+                    placeholder="Premium, playful, practical..."
+                    className="w-full bg-white/10 border border-white/20 rounded-2xl p-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase mb-2 tracking-widest text-white/50">Target Customers</label>
+                  <input
+                    value={sellerProfile.targetCustomers}
+                    onChange={(e) => setSellerProfile({ ...sellerProfile, targetCustomers: e.target.value })}
+                    placeholder="Students, families, executives..."
+                    className="w-full bg-white/10 border border-white/20 rounded-2xl p-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white"
+                  />
+                </div>
               </div>
 
               <div className="bg-white/5 p-6 rounded-2xl border border-white/10">

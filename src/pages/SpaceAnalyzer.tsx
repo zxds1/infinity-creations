@@ -7,6 +7,7 @@ import Cropper from 'react-easy-crop';
 import { auth, db, collection, addDoc, serverTimestamp, handleFirestoreError, OperationType } from '../lib/firebase';
 import { toast } from 'react-hot-toast';
 import Tooltip from '../components/Tooltip';
+import { extractDesignPreferences, saveStoredPreferences, trackEvent } from '../lib/behavior';
 
 export default function SpaceAnalyzer() {
   const [mediaFiles, setMediaFiles] = useState<{ type: 'image' | 'video', data: string }[]>([]);
@@ -211,6 +212,16 @@ export default function SpaceAnalyzer() {
       const inputs = isVideo ? mediaFiles[0].data.split(',')[1] : mediaFiles.map(m => m.data.split(',')[1]);
       
       const recommendations = await analyzeSpace(inputs, refinement, isVideo);
+      const preferences = extractDesignPreferences(recommendations, refinement);
+      saveStoredPreferences(preferences);
+      trackEvent({
+        eventType: 'analyzer',
+        metadata: {
+          mediaCount: mediaFiles.length,
+          preferences,
+          refinement: Boolean(refinement)
+        }
+      }).catch(() => undefined);
       setAnalysisProgress(100);
       
       setTimeout(() => {
@@ -227,11 +238,16 @@ export default function SpaceAnalyzer() {
             mediaCount: mediaFiles.length,
             prompt: refinement || "Advanced Multimedia Space Analysis",
             recommendations,
+            preferences,
             status: "completed",
             createdAt: serverTimestamp()
           });
         } catch (err) {
-          handleFirestoreError(err, OperationType.WRITE, 'designRequests');
+          try {
+            handleFirestoreError(err, OperationType.WRITE, 'designRequests');
+          } catch {
+            toast.error("Analysis saved locally, but cloud history was unavailable");
+          }
         }
       }
     } catch (error) {

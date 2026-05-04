@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { auth, signInWithGoogle } from '../lib/firebase';
+import { auth, db, doc, getDocFromServer, signInWithGoogle } from '../lib/firebase';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { Camera, Home, ShoppingBag, Paintbrush, User as UserIcon, LogOut, Menu, X, Facebook, Instagram, Twitter, ChevronRight, Settings, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -9,12 +9,22 @@ export default function Sidebar() {
   const [user, setUser] = useState<User | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
-    // For client testing: Mock user if none exists
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
       setUser(u);
+      if (!u) {
+        setIsAdmin(false);
+        return;
+      }
+      try {
+        const adminSnap = await getDocFromServer(doc(db, 'admins', u.uid));
+        setIsAdmin(adminSnap.exists());
+      } catch {
+        setIsAdmin(false);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -91,7 +101,7 @@ export default function Sidebar() {
 
         <nav className="flex-1 space-y-2 overflow-y-auto scrollbar-hide">
           {navItems.map((item) => (
-            <Link 
+            <Link
               key={item.path}
               to={item.path}
               className={`flex items-center gap-4 p-3 rounded-2xl transition-all ${location.pathname === item.path ? 'bg-brand-primary text-brand-cream shadow-lg shadow-brand-primary/20' : 'text-stone-400 hover:bg-stone-50 hover:text-brand-primary'}`}
@@ -101,7 +111,7 @@ export default function Sidebar() {
               </div>
               <AnimatePresence>
                 {isExpanded && (
-                  <motion.span 
+                  <motion.span
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -10 }}
@@ -114,26 +124,28 @@ export default function Sidebar() {
             </Link>
           ))}
 
-          <Link 
-            to="/admin"
-            className={`flex items-center gap-4 p-3 rounded-2xl transition-all ${location.pathname === '/admin' ? 'bg-stone-900 text-white shadow-lg' : 'text-stone-400 hover:bg-stone-50'}`}
-          >
-            <div className="min-w-[24px] flex items-center justify-center">
-              <Settings size={24} />
-            </div>
-            <AnimatePresence>
-              {isExpanded && (
-                <motion.span 
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  className="font-bold text-sm tracking-widest uppercase whitespace-nowrap"
-                >
-                  Admin Panel
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </Link>
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className={`flex items-center gap-4 p-3 rounded-2xl transition-all ${location.pathname === '/admin' ? 'bg-stone-900 text-white shadow-lg' : 'text-stone-400 hover:bg-stone-50'}`}
+            >
+              <div className="min-w-[24px] flex items-center justify-center">
+                <Settings size={24} />
+              </div>
+              <AnimatePresence>
+                {isExpanded && (
+                  <motion.span
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    className="font-bold text-sm tracking-widest uppercase whitespace-nowrap"
+                  >
+                    Admin Panel
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </Link>
+          )}
         </nav>
 
         <div className="mt-auto space-y-6">
@@ -212,14 +224,16 @@ export default function Sidebar() {
                   </Link>
                 ))}
 
-                <Link 
-                  to="/admin" 
-                  onClick={() => setIsMobileOpen(false)}
-                  className={`flex items-center gap-4 p-4 rounded-2xl transition-all ${location.pathname === '/admin' ? 'bg-stone-900 text-white' : 'text-stone-400'}`}
-                >
-                  <Settings size={24} />
-                  <span className="font-bold text-sm tracking-widest uppercase">Admin Panel</span>
-                </Link>
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setIsMobileOpen(false)}
+                    className={`flex items-center gap-4 p-4 rounded-2xl transition-all ${location.pathname === '/admin' ? 'bg-stone-900 text-white' : 'text-stone-400'}`}
+                  >
+                    <Settings size={24} />
+                    <span className="font-bold text-sm tracking-widest uppercase">Admin Panel</span>
+                  </Link>
+                )}
               </nav>
 
               <div className="mt-auto">

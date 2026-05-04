@@ -4,6 +4,8 @@ import { ShoppingBag, Trash2, Plus, Minus, MapPin, ArrowRight, CreditCard, Bookm
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import { Link } from 'react-router-dom';
+import { onAuthStateChanged, type User } from 'firebase/auth';
+import { trackEvent } from '../lib/behavior';
 
 interface CartItem {
   id: string;
@@ -31,13 +33,29 @@ export default function Cart() {
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [newAddress, setNewAddress] = useState({ label: '', address: '' });
+  const [user, setUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
-    const userId = auth.currentUser?.uid || "guest_test_user";
+    const unsubscribe = onAuthStateChanged(auth, currentUser => {
+      setUser(currentUser);
+      setAuthReady(true);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!authReady) return;
+    if (!user) {
+      setItems([]);
+      setAddresses([]);
+      setLoading(false);
+      return;
+    }
     
     const q = query(
       collection(db, 'cart'),
-      where('userId', '==', userId)
+      where('userId', '==', user.uid)
     );
 
     const unsubscribeCart = onSnapshot(q, (snapshot) => {
@@ -53,7 +71,7 @@ export default function Cart() {
     });
 
     const unsubscribeAddresses = onSnapshot(
-      collection(db, `users/${auth.currentUser.uid}/addresses`),
+      collection(db, `users/${user.uid}/addresses`),
       (snapshot) => {
         const data = snapshot.docs.map(doc => ({
           id: doc.id,
@@ -67,7 +85,7 @@ export default function Cart() {
       unsubscribeCart();
       unsubscribeAddresses();
     };
-  }, []);
+  }, [authReady, user]);
 
   const updateQuantity = async (id: string, newQty: number) => {
     if (newQty < 1) return;
@@ -137,22 +155,37 @@ export default function Cart() {
 
   const removeItem = async (id: string) => {
     try {
+      const item = items.find(i => i.id === id);
       await deleteDoc(doc(db, 'cart', id));
+      if (item) {
+        trackEvent({ eventType: 'cart', productId: item.productId, metadata: { action: 'remove-intent' } }).catch(() => undefined);
+      }
       toast.success("Removed from cart");
     } catch (err) {
       toast.error("Failed to remove");
     }
   };
 
+  const confirmIntent = async () => {
+    await Promise.all(items.map(item =>
+      trackEvent({
+        eventType: 'intent',
+        productId: item.productId,
+        metadata: { source: 'cart-confirmation', quantity: item.quantity }
+      }).catch(() => undefined)
+    ));
+    toast.success("Intent confirmed. Maridadi will follow up.");
+  };
+
   const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-  if (!auth.currentUser && false) { // Bypass for testing
+  if (authReady && !user) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-24 text-center">
         <ShoppingBag size={64} className="text-stone-200 mx-auto mb-6" />
-        <h1 className="text-4xl mb-6">Sign in to view your cart</h1>
+        <h1 className="text-4xl mb-6">Sign in to review your intent list</h1>
         <Link to="/" className="bg-brand-primary text-brand-cream px-8 py-4 rounded-2xl font-bold uppercase tracking-widest text-xs">
-          Start Shopping
+          Start Exploring
         </Link>
       </div>
     );
@@ -161,8 +194,8 @@ export default function Cart() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-16">
       <div className="mb-12">
-        <h1 className="text-5xl md:text-7xl mb-4 italic font-light">My <span className="font-serif not-italic">Cart</span></h1>
-        <p className="text-stone-500">Review your selected pieces and prepare for delivery.</p>
+        <h1 className="text-5xl md:text-7xl mb-4 italic font-light">Intent <span className="font-serif not-italic">Confirmation</span></h1>
+        <p className="text-stone-500">Review selected pieces before Maridadi follows up. Payments are handled after confirmation.</p>
       </div>
 
       {loading ? (
@@ -174,9 +207,10 @@ export default function Cart() {
           <div className="w-20 h-20 rounded-full bg-stone-50 flex items-center justify-center mx-auto mb-6 text-stone-300">
             <ShoppingBag size={40} />
           </div>
-          <h3 className="text-2xl mb-2 font-serif">Your cart is empty</h3>
+          <h3 className="text-2xl mb-2 font-serif">No confirmed intent yet</h3>
+          <p className="text-stone-400 mb-8">Compare products or save items to help us understand what you are considering.</p>
           <Link to="/shop" className="text-brand-primary font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:gap-4 transition-all">
-            Browse Shop <ArrowRight size={16} />
+            Browse signals <ArrowRight size={16} />
           </Link>
         </div>
       ) : (
@@ -221,7 +255,7 @@ export default function Cart() {
                       <div className="flex-1 min-w-[200px]">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-stone-400">
-                            <MapPin size={10} /> Delivery Address
+                            <MapPin size={10} /> Follow-up Address
                           </div>
                           {addresses.length > 0 && (
                             <div className="flex gap-2">
@@ -315,7 +349,7 @@ export default function Cart() {
             </div>
 
             <div className="bg-brand-primary text-brand-cream rounded-[40px] p-8 sticky top-8 shadow-2xl">
-              <h2 className="text-3xl font-serif mb-8 italic">Order Summary</h2>
+              <h2 className="text-3xl font-serif mb-8 italic">Intent Summary</h2>
               
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between text-white/60 text-sm">
@@ -323,7 +357,7 @@ export default function Cart() {
                   <span>KSH {total}</span>
                 </div>
                 <div className="flex justify-between text-white/60 text-sm">
-                  <span>Delivery</span>
+                  <span>Estimated delivery</span>
                   <span>KSH 500</span>
                 </div>
                 <div className="pt-4 border-t border-white/10 flex justify-between font-bold text-xl">
@@ -332,12 +366,15 @@ export default function Cart() {
                 </div>
               </div>
 
-              <button className="w-full bg-white text-brand-primary py-5 rounded-2xl font-bold uppercase tracking-widest text-sm flex items-center justify-center gap-3 hover:scale-[1.02] transition-transform shadow-xl">
-                <CreditCard size={20} /> Checkout
+              <button
+                onClick={confirmIntent}
+                className="w-full bg-white text-brand-primary py-5 rounded-2xl font-bold uppercase tracking-widest text-sm flex items-center justify-center gap-3 hover:scale-[1.02] transition-transform shadow-xl"
+              >
+                <CreditCard size={20} /> Confirm Intent
               </button>
               
               <p className="text-[10px] text-white/40 mt-6 text-center italic">
-                Secure payment powered by Pesapal & DPO
+                No payment is collected here. This captures demand for Maridadi follow-up.
               </p>
             </div>
           </div>

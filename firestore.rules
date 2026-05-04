@@ -16,14 +16,16 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && (
-        request.auth.token.email == 'mwirigib332@gmail.com' || 
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
-      );
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
     function isValidId(id) {
       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function productExists(productId) {
+      return isValidId(productId)
+        && exists(/databases/$(database)/documents/products/$(productId));
     }
 
     // User Rules
@@ -51,22 +53,25 @@ service cloud.firestore {
 
       function isValidDesignRequest(req) {
         return req.userId == request.auth.uid
-          && req.imageUrl is string && req.imageUrl.size() <= 2048
+          && req.mediaCount is int
+          && req.mediaCount >= 1
+          && req.mediaCount <= 12
+          && req.recommendations is string
+          && req.recommendations.size() <= 20000
           && req.createdAt == request.time;
       }
     }
 
     // Orders Rules
     match /orders/{orderId} {
-      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isSignedIn() && isOwner(request.resource.data.userId) && isValidOrder(request.resource.data);
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && (
-        // Allow user to cancel order if it's still pending
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+      allow update: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid && (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
         && request.resource.data.status == 'cancelled'
         && resource.data.status == 'pending'
-      );
+      ));
 
       function isValidOrder(order) {
         return order.userId == request.auth.uid
@@ -79,16 +84,62 @@ service cloud.firestore {
     // Cart Rules
     match /cart/{itemId} {
       allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && isValidCartItem(request.resource.data);
+      allow update: if ((isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin())
+        && request.resource.data.productId == resource.data.productId;
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      function isValidCartItem(item) {
+        return productExists(item.productId)
+          && item.productName is string
+          && item.productName.size() <= 160
+          && item.price is number
+          && item.price >= 0
+          && item.quantity is int
+          && item.quantity >= 1
+          && item.quantity <= 99
+          && item.createdAt == request.time;
+      }
     }
 
     // Wishlist Rules
     match /wishlist/{itemId} {
       allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && isValidWishlistItem(request.resource.data);
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      function isValidWishlistItem(item) {
+        return productExists(item.productId)
+          && item.productName is string
+          && item.productName.size() <= 160
+          && item.price is number
+          && item.price >= 0
+          && item.createdAt == request.time;
+      }
+    }
+
+    // Behavior Events Rules
+    match /events/{eventId} {
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.eventType in ['view', 'compare', 'wishlist', 'cart', 'intent', 'analyzer', 'branding']
+        && request.resource.data.createdAt == request.time;
+      allow get, list: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    match /sellerSignals/{signalId} {
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+      allow get, list: if isAdmin();
+      allow update, delete: if false;
     }
 
     // Review Rules
@@ -124,7 +175,7 @@ service cloud.firestore {
     }
     
     match /admins/{adminId} {
-      allow read: if isAdmin();
+      allow read: if isOwner(adminId) || isAdmin();
       allow write: if false; 
     }
   }
