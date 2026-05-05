@@ -2,13 +2,29 @@ import { useState, useEffect } from 'react';
 import { Paintbrush, Truck, Bike, Megaphone, Image as ImageIcon, Send, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'react-hot-toast';
-import { auth, db, collection, addDoc, serverTimestamp, getDocs } from '../lib/firebase';
+import { auth, db, collection, addDoc, serverTimestamp } from '../lib/firebase';
 import { trackEvent } from '../lib/behavior';
-import { defaultSiteContent, fetchSiteContent, type SiteContent } from '../lib/siteContent';
+import { defaultSiteContent, fetchSiteContent, type ServiceOffering, type SiteContent } from '../lib/siteContent';
+
+const serviceIconMap: Record<string, typeof Paintbrush> = {
+  Truck,
+  Bike,
+  Paintbrush,
+  Megaphone,
+  Camera: ImageIcon,
+  Home: Paintbrush,
+  Package: ImageIcon,
+  ShoppingBag: Megaphone,
+  Sparkles: Paintbrush,
+  Heart: Paintbrush,
+  Zap: Paintbrush
+};
+
+const getServiceIcon = (icon?: string) => serviceIconMap[icon || ''] || Paintbrush;
 
 export default function Branding() {
-  const [brandingServices, setBrandingServices] = useState<any[]>([]);
-  const [selectedService, setSelectedService] = useState<any | null>(null);
+  const [brandingServices, setBrandingServices] = useState<ServiceOffering[]>([]);
+  const [selectedService, setSelectedService] = useState<ServiceOffering | null>(null);
   const [description, setDescription] = useState("");
   const [image, setImage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -23,24 +39,10 @@ export default function Branding() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const [snap, siteContent] = await Promise.all([
-          getDocs(collection(db, 'services')),
-          fetchSiteContent()
-        ]);
+        const siteContent = await fetchSiteContent();
         setContent(siteContent);
-        const servicesData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        if (servicesData.length === 0) {
-          const initial = [
-            { id: 'v1', name: "Vehicle Branding", icon: "Truck", price: "KSH 15,000", desc: "Full or partial wraps for cars and trucks." },
-            { id: 'b1', name: "Boda Boda Design", icon: "Bike", price: "KSH 4,500", desc: "Custom motifs and branding for motorcycles." },
-            { id: 'Fashion', name: "Fashion Labeling", icon: "Paintbrush", price: "KSH 2,000", desc: "Labels and branding for luxury apparel." }
-          ];
-          setBrandingServices(initial);
-          setSelectedService(initial[0]);
-        } else {
-          setBrandingServices(servicesData);
-          setSelectedService(servicesData[0]);
-        }
+        setBrandingServices(siteContent.services);
+        setSelectedService(siteContent.services[0] || null);
       } catch (err) {
         console.error(err);
       } finally {
@@ -73,7 +75,11 @@ export default function Branding() {
 
     setSubmitting(true);
     try {
-      const serviceName = selectedService.name || selectedService.title || 'Branding service';
+      if (!selectedService) {
+        toast.error("Please choose a service");
+        return;
+      }
+      const serviceName = selectedService.title || 'Branding service';
       const sellerSignal = {
         businessType: sellerProfile.businessType.trim(),
         positioning: sellerProfile.positioning.trim(),
@@ -118,28 +124,12 @@ export default function Branding() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-12 md:py-20">
       <div className="mb-12 overflow-hidden rounded-[32px] bg-stone-950 p-6 text-white md:rounded-[40px] md:p-10">
-        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-          <div>
-            <p className="mb-4 text-[10px] font-black uppercase tracking-[0.24em] text-white/45">For business</p>
-            <h1 className="max-w-3xl text-4xl font-semibold leading-none md:text-7xl">{content.businessTitle}</h1>
-            <p className="mt-5 max-w-2xl text-sm leading-relaxed text-white/65 md:text-lg">
-              {content.businessSubtitle}
-            </p>
-          </div>
-          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
-            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-white/40">Business services</p>
-            <div className="mt-6 space-y-5">
-              {[
-                'Banners & signage',
-                'Vehicle branding',
-                'Custom branding'
-              ].map(item => (
-                <div key={item} className="border-t border-white/10 pt-5">
-                  <p className="text-lg font-bold">{item}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+        <div>
+          <p className="mb-4 text-[10px] font-black uppercase tracking-[0.24em] text-white/45">For business</p>
+          <h1 className="max-w-3xl text-4xl font-semibold leading-none md:text-7xl">{content.businessTitle}</h1>
+          <p className="mt-5 max-w-2xl text-sm leading-relaxed text-white/65 md:text-lg">
+            {content.businessSubtitle}
+          </p>
         </div>
       </div>
 
@@ -150,30 +140,17 @@ export default function Branding() {
             Pick the closest starting point. Your final design can still be customized for your brand, colors, size, and message.
           </p>
 
-          <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {[
-              { icon: Megaphone, title: 'Banners & Signage', text: 'Professional designs for shops, events, and promotions.' },
-              { icon: Truck, title: 'Vehicle Branding', text: 'Make your boda boda or vehicle stand out.' },
-              { icon: Paintbrush, title: 'Custom Branding', text: 'Unique designs tailored to your business identity.' }
-            ].map(item => {
-              const Icon = item.icon;
-              return (
-                <div key={item.title} className="rounded-[24px] bg-white p-5 shadow-sm">
-                  <Icon size={20} className="text-brand-primary" />
-                  <h3 className="mt-4 font-bold text-stone-900">{item.title}</h3>
-                  <p className="mt-1 text-sm text-stone-500">{item.text}</p>
-                </div>
-              );
-            })}
-          </div>
-
           <div className="space-y-4">
             {loading ? (
               <div className="animate-pulse space-y-4">
                 {[1,2,3].map(i => <div key={i} className="h-20 bg-stone-100 rounded-3xl" />)}
               </div>
+            ) : brandingServices.length === 0 ? (
+              <div className="rounded-3xl border border-stone-100 bg-white p-8 text-stone-400">
+                No services are active yet. Add services from Admin to show them here.
+              </div>
             ) : brandingServices.map(service => {
-              const IconComp = service.icon === 'Bike' ? Bike : service.icon === 'Truck' ? Truck : Paintbrush;
+              const IconComp = getServiceIcon(service.icon);
               return (
                 <button
                   key={service.id}
@@ -185,8 +162,8 @@ export default function Branding() {
                       <IconComp size={24} />
                     </div>
                     <div>
-                      <h3 className="font-bold text-lg">{service.name || service.title}</h3>
-                      <p className="text-stone-400 text-sm">{service.price || service.priceRange}</p>
+                      <h3 className="font-bold text-lg">{service.title}</h3>
+                      <p className="text-stone-400 text-sm">{service.priceRange}</p>
                     </div>
                   </div>
                   {selectedService?.id === service.id && <ArrowRight className="text-brand-primary" size={20} />}
@@ -207,7 +184,7 @@ export default function Branding() {
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
               
               <h2 className="text-4xl mb-4 font-serif">Request a design</h2>
-              <p className="text-white/70 mb-8">{selectedService.desc || selectedService.description}</p>
+              <p className="text-white/70 mb-8">{selectedService.description}</p>
 
             <div className="space-y-6">
               <div>

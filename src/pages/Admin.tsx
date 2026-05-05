@@ -6,13 +6,24 @@ import { toast } from 'react-hot-toast';
 import { generateAdminInsights } from '../services/geminiService';
 import ReactMarkdown from 'react-markdown';
 import { onAuthStateChanged } from 'firebase/auth';
-import { defaultSiteContent, mergeSiteContent, type SiteContent } from '../lib/siteContent';
+import { defaultSiteContent, mergeSiteContent, type ServiceOffering, type SiteContent } from '../lib/siteContent';
+
+const emptyServiceForm = {
+  id: '',
+  title: '',
+  description: '',
+  category: '',
+  icon: 'Paintbrush',
+  image: '',
+  priceRange: '',
+  search: '',
+  order: 0
+};
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState<'orders' | 'catalog' | 'services' | 'categories' | 'content' | 'insights'>('orders');
   const [orders, setOrders] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
-  const [services, setServices] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [aiInsights, setAiInsights] = useState<string>("");
@@ -34,7 +45,7 @@ export default function Admin() {
     tags: ''
   });
   const [variationInput, setVariationInput] = useState({ name: '', image: '', price: 0 });
-  const [newService, setNewService] = useState({ title: '', description: '', icon: '', image: '', priceRange: '', order: 0 });
+  const [newService, setNewService] = useState(emptyServiceForm);
   const [newCategory, setNewCategory] = useState({ name: '', slug: '', order: 0 });
   
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
@@ -92,9 +103,6 @@ export default function Admin() {
         const productSnap = await getDocs(collection(db, 'products'));
         setProducts(productSnap.docs.map(d => ({ id: d.id, ...d.data() })));
         
-        const serviceSnap = await getDocs(collection(db, 'services'));
-        setServices(serviceSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-
         const categorySnap = await getDocs(query(collection(db, 'categories'), orderBy('order', 'asc')));
         setCategories(categorySnap.docs.map(d => ({ id: d.id, ...d.data() })));
 
@@ -178,23 +186,57 @@ export default function Admin() {
     }
   };
 
-  const popularIcons = ['Truck', 'Bike', 'Paintbrush', 'ShoppingBag', 'Zap', 'Home', 'Camera', 'Package', 'Clock', 'Settings', 'Heart', 'Star'];
+  const popularIcons = ['Truck', 'Bike', 'Paintbrush', 'ShoppingBag', 'Zap', 'Home', 'Camera', 'Package', 'Clock', 'Settings', 'Heart', 'Star', 'Sparkles'];
 
   const addService = async () => {
     try {
-      if (editingServiceId) {
-        await updateDoc(doc(db, 'services', editingServiceId), newService);
-        setServices(services.map(s => s.id === editingServiceId ? { id: editingServiceId, ...newService } : s));
-        toast.success("Service updated");
-        setEditingServiceId(null);
-      } else {
-        const docRef = await addDoc(collection(db, 'services'), newService);
-        setServices([...services, { id: docRef.id, ...newService }]);
-        toast.success("Service added");
+      if (!newService.title.trim()) {
+        toast.error("Service title required");
+        return;
       }
-      setNewService({ title: '', description: '', icon: '', image: '', priceRange: '', order: services.length });
+      const serviceToSave: ServiceOffering = {
+        id: editingServiceId || newService.id || newService.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `service-${Date.now()}`,
+        title: newService.title.trim(),
+        description: newService.description.trim(),
+        category: newService.category.trim() || 'Custom',
+        icon: newService.icon || 'Paintbrush',
+        image: newService.image,
+        priceRange: newService.priceRange.trim() || 'Custom quote',
+        search: newService.search.trim() || `${newService.title} ${newService.category}`.trim(),
+        order: Number(newService.order || 0)
+      };
+      const nextContent = {
+        ...siteContent,
+        services: editingServiceId
+          ? siteContent.services.map(service => service.id === editingServiceId ? serviceToSave : service).sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
+          : [...siteContent.services, serviceToSave].sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
+      };
+      await setDoc(doc(db, 'siteContent', 'main'), nextContent);
+      setSiteContent(nextContent);
+      toast.success(editingServiceId ? "Service updated" : "Service added");
+      setEditingServiceId(null);
+      setNewService({ ...emptyServiceForm, order: nextContent.services.length });
     } catch (err) {
-      toast.error("Failed to add service");
+      toast.error("Failed to save service");
+    }
+  };
+
+  const removeContentService = async (serviceId: string) => {
+    if (!window.confirm("Remove this service from the site?")) return;
+    try {
+      const nextContent = {
+        ...siteContent,
+        services: siteContent.services.filter(service => service.id !== serviceId)
+      };
+      await setDoc(doc(db, 'siteContent', 'main'), nextContent);
+      setSiteContent(nextContent);
+      if (editingServiceId === serviceId) {
+        setEditingServiceId(null);
+        setNewService({ ...emptyServiceForm, order: nextContent.services.length });
+      }
+      toast.success("Service removed");
+    } catch {
+      toast.error("Failed to remove service");
     }
   };
 
@@ -580,9 +622,16 @@ export default function Admin() {
         {activeTab === 'services' && (
           <motion.div key="services" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-8">
             <div className="bg-white p-8 rounded-3xl border border-stone-100 shadow-sm transition-all duration-500">
-              <h3 className="text-xl font-serif mb-6">{editingServiceId ? 'Edit Service' : 'Add New Service'}</h3>
+              <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <h3 className="text-xl font-serif">{editingServiceId ? 'Edit Service' : 'Add New Service'}</h3>
+                  <p className="mt-2 text-sm text-stone-500">These services appear on Customize and For Business. Add, edit, or remove them here.</p>
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-brand-primary">{siteContent.services.length} active</span>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <input type="text" placeholder="Service Title" className="p-4 rounded-xl border border-stone-100 focus:outline-brand-primary" value={newService.title} onChange={e => setNewService({...newService, title: e.target.value})} />
+                <input type="text" placeholder="Category (Personal, Devices, Business...)" className="p-4 rounded-xl border border-stone-100 focus:outline-brand-primary" value={newService.category} onChange={e => setNewService({...newService, category: e.target.value})} />
                 <input type="text" placeholder="Price Range" className="p-4 rounded-xl border border-stone-100 focus:outline-brand-primary" value={newService.priceRange} onChange={e => setNewService({...newService, priceRange: e.target.value})} />
                 <div className="flex flex-col gap-2">
                   <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest pl-2">Select Icon</span>
@@ -606,12 +655,16 @@ export default function Admin() {
                         {iconName === 'Settings' && <Settings size={16} />}
                         {iconName === 'Heart' && <Heart size={16} />}
                         {iconName === 'Star' && <Star size={16} />}
-                        {!['Truck', 'Bike', 'Paintbrush', 'ShoppingBag', 'Zap', 'Home', 'Camera', 'Package', 'Clock', 'Settings', 'Heart', 'Star'].includes(iconName) && <Plus size={16} />}
+                        {iconName === 'Sparkles' && <Sparkles size={16} />}
+                        {!['Truck', 'Bike', 'Paintbrush', 'ShoppingBag', 'Zap', 'Home', 'Camera', 'Package', 'Clock', 'Settings', 'Heart', 'Star', 'Sparkles'].includes(iconName) && <Plus size={16} />}
                       </button>
                     ))}
                   </div>
                 </div>
                 <textarea placeholder="Description" className="p-4 rounded-xl border border-stone-100 focus:outline-brand-primary md:col-span-2" value={newService.description} onChange={e => setNewService({...newService, description: e.target.value})} />
+                <input type="text" placeholder="Search terms" className="p-4 rounded-xl border border-stone-100 focus:outline-brand-primary" value={newService.search} onChange={e => setNewService({...newService, search: e.target.value})} />
+                <input type="number" placeholder="Display order" className="p-4 rounded-xl border border-stone-100 focus:outline-brand-primary" value={newService.order} onChange={e => setNewService({...newService, order: Number(e.target.value)})} />
+                <input type="text" placeholder="Image URL (optional)" className="p-4 rounded-xl border border-stone-100 focus:outline-brand-primary" value={newService.image} onChange={e => setNewService({...newService, image: e.target.value})} />
                 <div className="flex gap-4">
                   <button 
                     onClick={addService} 
@@ -622,7 +675,7 @@ export default function Admin() {
                   </button>
                   {editingServiceId && (
                     <button 
-                      onClick={() => { setEditingServiceId(null); setNewService({ title: '', description: '', icon: '', image: '', priceRange: '', order: 0 }); }}
+                      onClick={() => { setEditingServiceId(null); setNewService({ ...emptyServiceForm, order: siteContent.services.length }); }}
                       className="px-6 rounded-xl border border-stone-200 text-stone-400 font-bold"
                     >
                       Cancel
@@ -633,7 +686,7 @@ export default function Admin() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {services.map(s => (
+              {siteContent.services.map(s => (
                 <div key={s.id} className="bg-white p-6 rounded-3xl border border-stone-100 shadow-sm group">
                    <div className="flex items-center gap-3 mb-3">
                      <div className="p-2 rounded-xl bg-stone-50 text-brand-primary">
@@ -649,27 +702,24 @@ export default function Admin() {
                        {s.icon === 'Settings' && <Settings size={20} />}
                        {s.icon === 'Heart' && <Heart size={20} />}
                        {s.icon === 'Star' && <Star size={20} />}
-                       {!['Truck', 'Bike', 'Paintbrush', 'ShoppingBag', 'Zap', 'Home', 'Camera', 'Package', 'Clock', 'Settings', 'Heart', 'Star'].includes(s.icon) && <Settings size={20} />}
+                       {s.icon === 'Sparkles' && <Sparkles size={20} />}
+                       {!['Truck', 'Bike', 'Paintbrush', 'ShoppingBag', 'Zap', 'Home', 'Camera', 'Package', 'Clock', 'Settings', 'Heart', 'Star', 'Sparkles'].includes(s.icon) && <Settings size={20} />}
                      </div>
                      <h4 className="font-bold text-lg">{s.title}</h4>
                    </div>
+                   <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-brand-primary">{s.category} · {s.priceRange}</p>
                    <p className="text-stone-400 text-sm mb-4 line-clamp-2">{s.description}</p>
                    <div className="flex gap-2">
                      <button 
                         onClick={() => {
                           setEditingServiceId(s.id);
-                          setNewService({ title: s.title, description: s.description, icon: s.icon, image: s.image || '', priceRange: s.priceRange || '', order: s.order });
+                          setNewService({ id: s.id, title: s.title, description: s.description, category: s.category || '', icon: s.icon, image: s.image || '', priceRange: s.priceRange || '', search: s.search || '', order: s.order });
                         }}
                         className="flex-1 bg-stone-50 text-stone-400 py-3 rounded-xl hover:bg-stone-100 transition-colors"
                       >
                         <Edit3 size={18} className="mx-auto" />
                       </button>
-                     <button onClick={async () => {
-                       if (window.confirm("Delete this service?")) {
-                         await deleteDoc(doc(db, 'services', s.id));
-                         setServices(services.filter(x => x.id !== s.id));
-                       }
-                     }} className="flex-1 bg-red-50 text-red-400 py-3 rounded-xl hover:bg-red-100 transition-colors"><Trash2 size={18} className="mx-auto" /></button>
+                     <button onClick={() => removeContentService(s.id)} className="flex-1 bg-red-50 text-red-400 py-3 rounded-xl hover:bg-red-100 transition-colors"><Trash2 size={18} className="mx-auto" /></button>
                    </div>
                 </div>
               ))}

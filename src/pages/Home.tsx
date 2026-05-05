@@ -1,16 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowRight, Building2, Camera, CheckCircle2, Gift, MonitorSmartphone, Paintbrush, Search, Sparkles, Star, Truck } from 'lucide-react';
+import { ArrowRight, Building2, Camera, CheckCircle2, Gift, MonitorSmartphone, Paintbrush, Search, Sparkles, Truck } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { db, collection, getDocs, query, orderBy, limit } from '../lib/firebase';
 import { getProductInsightLabels, getStoredPreferences } from '../lib/behavior';
 import { defaultSiteContent, fetchSiteContent, type SiteContent } from '../lib/siteContent';
-
-const onboardingSteps = [
-  { title: 'Choose what you want to create', body: 'Start with personal, device, decor, or business work.' },
-  { title: 'Customize your design or share your idea', body: 'Add style notes, details, or a reference image.' },
-  { title: 'We design, print, and deliver', body: 'Maridadi turns the request into a finished piece.' }
-];
 
 const categoryIcons = [Gift, Paintbrush, MonitorSmartphone, Building2];
 
@@ -65,15 +59,16 @@ export default function Home() {
             transition={{ duration: 0.45, ease: 'easeOut' }}
             className="max-w-3xl"
           >
-            <p className="mb-3 text-[10px] font-black uppercase tracking-[0.24em] text-white/60 md:mb-4 md:text-[11px]">{content.coreHeadline}</p>
+            <p className="mb-3 text-[10px] font-black uppercase tracking-[0.24em] text-white/60 md:mb-4 md:text-[11px]">Maridadi Creations</p>
             <h1 className="text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl md:text-7xl lg:text-8xl">
-              {content.homeHeroTitle}
+              {content.coreHeadline}
             </h1>
             <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/75 md:mt-6 md:text-lg">
-              {content.homeHeroSubtitle}
+              {content.coreSubtext}
             </p>
 
             <form onSubmit={submitSearch} className="mt-7 max-w-2xl md:mt-10">
+              <label className="mb-3 block text-sm font-bold text-white md:text-lg">{content.homeHeroTitle}</label>
               <div className="flex flex-col gap-2 rounded-[24px] bg-white p-2 shadow-2xl shadow-stone-950/30 sm:flex-row md:rounded-[28px]">
                 <div className="flex min-h-14 flex-1 items-center gap-3 px-4">
                   <Search size={20} className="text-stone-400" />
@@ -85,7 +80,7 @@ export default function Home() {
                   />
                 </div>
                 <button className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-brand-primary px-6 text-xs font-black uppercase tracking-widest text-brand-cream md:min-h-14">
-                  Explore <ArrowRight size={16} />
+                  Start creating <ArrowRight size={16} />
                 </button>
               </div>
             </form>
@@ -109,30 +104,14 @@ export default function Home() {
               })}
             </div>
           </motion.div>
-
-          <div className="mt-7 grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3 md:mt-12">
-            {onboardingSteps.map((step, index) => (
-              <motion.div
-                key={step.title}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + index * 0.08 }}
-                className="border-t border-white/20 pt-4"
-              >
-                <div className="mb-2 text-[10px] font-black uppercase tracking-widest text-white/40">0{index + 1}</div>
-                <h2 className="text-sm font-bold">{step.title}</h2>
-                <p className="mt-1 text-xs leading-relaxed text-white/55">{step.body}</p>
-              </motion.div>
-            ))}
-          </div>
         </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-12 lg:py-20">
         <div className="mb-8 max-w-3xl">
           <p className="mb-4 text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">Quick entry</p>
-          <h2 className="text-3xl font-serif leading-tight md:text-5xl">What do you want to create today?</h2>
-          <p className="mt-4 text-stone-500">{content.coreSubtext}</p>
+          <h2 className="text-3xl font-serif leading-tight md:text-5xl">Quick categories</h2>
+          <p className="mt-4 text-stone-500">Choose a starting point, then customize it in Explore.</p>
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {content.categories.map((group, index) => (
@@ -149,7 +128,7 @@ export default function Home() {
                 </div>
                 <div className="p-5">
                   <h3 className="text-xl font-bold text-stone-900">{group.shortLabel}</h3>
-                  <p className="mt-2 min-h-12 text-sm leading-relaxed text-stone-500">{group.description}</p>
+                  <p className="mt-2 min-h-12 text-sm leading-relaxed text-stone-500">{group.shortDescription}</p>
                   <span className="mt-5 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-primary">
                     Customize <ArrowRight size={14} />
                   </span>
@@ -165,7 +144,7 @@ export default function Home() {
           <div className="mb-5 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">
             <Sparkles size={14} /> Featured work
           </div>
-          <h2 className="text-3xl font-serif leading-tight md:text-5xl">{content.featuredTitle}</h2>
+          <h2 className="text-3xl font-serif leading-tight md:text-5xl">Popular Right Now</h2>
           <p className="mt-5 text-stone-500">
             {content.featuredSubtitle}
           </p>
@@ -213,12 +192,12 @@ export default function Home() {
                       {getProductInsightLabels(product, preferences, index)[0]}
                     </div>
                   </div>
-                  <div className="mt-4 flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <h3 className="truncate font-bold text-stone-900">Custom {product.name}</h3>
-                      <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-stone-400">{product.category}</p>
-                    </div>
-                    <p className="shrink-0 font-bold text-brand-primary">From KSH {product.price}</p>
+                  <div className="mt-4">
+                    <h3 className="truncate font-bold text-stone-900">Custom {product.name}</h3>
+                    <p className="mt-1 text-sm text-stone-500">Designed and printed for you</p>
+                    <span className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-primary px-4 py-2 text-[10px] font-black uppercase tracking-widest text-brand-cream">
+                      Customize <ArrowRight size={13} />
+                    </span>
                   </div>
                 </Link>
               ))}
@@ -235,10 +214,9 @@ export default function Home() {
           </div>
           <div className="grid gap-4">
             {[
-              { icon: CheckCircle2, text: 'Choose what you want to create.' },
-              { icon: Paintbrush, text: 'Customize your design or share your idea.' },
-              { icon: Truck, text: 'We design, print, and deliver.' },
-              { icon: Star, text: 'Save ideas and return when you are ready.' }
+              { icon: CheckCircle2, text: 'Choose what to create.' },
+              { icon: Paintbrush, text: 'Customize or share your idea.' },
+              { icon: Truck, text: 'We design, print, deliver.' }
             ].map(item => {
               const Icon = item.icon;
               return (
@@ -249,6 +227,18 @@ export default function Home() {
               );
             })}
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-12 lg:py-20">
+        <div className="flex flex-col items-start justify-between gap-6 border-t border-stone-200 pt-10 md:flex-row md:items-center">
+          <div>
+            <p className="mb-3 text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">Custom request</p>
+            <h2 className="text-3xl font-serif leading-tight md:text-5xl">Have something unique in mind?</h2>
+          </div>
+          <Link to="/analyzer" className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-6 py-4 text-xs font-black uppercase tracking-widest text-white">
+            Start custom design <Sparkles size={16} />
+          </Link>
         </div>
       </section>
     </div>

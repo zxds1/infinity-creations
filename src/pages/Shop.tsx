@@ -1,5 +1,5 @@
 import { Fragment, useState, useEffect } from 'react';
-import { Building2, Gift, MonitorSmartphone, Paintbrush, ShoppingBag, Star, Plus, MapPin, Package, Heart, Info, Minus, Check, Search, SlidersHorizontal, ShieldCheck, Store, Sparkles, ArrowRight, X } from 'lucide-react';
+import { ShoppingBag, Star, Plus, MapPin, Package, Info, Minus, Check, Search, SlidersHorizontal, ShieldCheck, Store, Sparkles, ArrowRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -15,7 +15,6 @@ import {
 import { defaultSiteContent, fetchSiteContent, type SiteContent } from '../lib/siteContent';
 
 const DEFAULT_MAX_PRICE = 100000;
-const categoryIcons = [Gift, Paintbrush, MonitorSmartphone, Building2];
 
 export default function Shop() {
   const [searchParams] = useSearchParams();
@@ -359,30 +358,6 @@ export default function Shop() {
         </Link>
       </div>
 
-      <section className="mb-8 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-        {content.categories.map((intent, index) => {
-          const Icon = categoryIcons[index % categoryIcons.length];
-          return (
-            <button
-              key={intent.title}
-              onClick={() => {
-                setSearchQuery(intent.search);
-                setActiveCategory('All');
-              }}
-              className="group flex min-h-28 items-start gap-4 rounded-[24px] bg-white p-5 text-left shadow-sm transition-transform hover:-translate-y-1 hover:shadow-md"
-            >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-primary/5 text-brand-primary group-hover:bg-brand-primary group-hover:text-brand-cream">
-                <Icon size={22} />
-              </span>
-              <span>
-                <span className="block font-bold text-stone-900">{intent.title}</span>
-                <span className="mt-1 block text-sm leading-relaxed text-stone-500">{intent.description}</span>
-              </span>
-            </button>
-          );
-        })}
-      </section>
-
       <div className="sticky top-16 z-40 mb-8 rounded-[24px] border border-stone-100 bg-brand-cream/95 p-2 backdrop-blur-xl shadow-sm md:top-20 md:mb-12 md:rounded-[28px] md:p-3">
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_auto_minmax(220px,320px)_auto] xl:items-center">
           <div className="flex min-h-12 items-center gap-3 rounded-2xl bg-white px-4">
@@ -503,94 +478,47 @@ export default function Shop() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
-              className="group cursor-pointer"
+              className="group cursor-pointer rounded-[28px] bg-white p-4 shadow-sm transition-transform hover:-translate-y-1 md:rounded-[32px]"
               onClick={() => handleProductClick(product)}
             >
-                <div className="aspect-[4/5] rounded-[28px] overflow-hidden bg-stone-100 relative mb-4 md:mb-6 md:rounded-[40px]">
+              <div className="relative mb-5 aspect-[4/5] overflow-hidden rounded-[24px] bg-stone-100 md:rounded-[28px]">
                 <motion.img 
                   src={product.image} 
                   alt={product.name} 
-                    whileHover={{ scale: 1.06 }}
-                    transition={{ duration: 0.45 }}
-                  className="w-full h-full object-cover origin-center"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.45 }}
+                  className="h-full w-full origin-center object-cover"
                   referrerPolicy="no-referrer"
                 />
-                
-                {/* Quick View Overlay */}
-                <div className="absolute inset-0 bg-stone-900/0 group-hover:bg-stone-900/20 transition-all duration-500 flex items-center justify-center">
-                  <motion.button 
-                    initial={{ opacity: 0, y: 10 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={(e) => { e.stopPropagation(); handleProductClick(product); }}
-                    className="opacity-0 group-hover:opacity-100 bg-white text-stone-900 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl transition-all duration-300"
-                  >
-                  View service
-                  </motion.button>
+                <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-stone-700 shadow-sm backdrop-blur">
+                  {getProductInsightLabels(product, preferences, idx)[0] || 'Popular'}
+                </span>
+              </div>
+
+              <div className="px-1 pb-1">
+                <h3 className="text-xl font-bold text-stone-900">{getServiceTitle(product)}</h3>
+                <p className="mt-2 text-sm text-stone-500">Designed and printed for you</p>
+                <div className="mt-3 flex items-center justify-between gap-3 text-xs text-stone-400">
+                  <span className="font-bold uppercase tracking-widest">{product.category}</span>
+                  <span className="font-bold text-brand-primary">From KSH {product.price}</span>
                 </div>
-
-                <label
-                  onClick={(e) => handleToggleCompare(e, product)}
-                  className={`absolute left-4 top-4 z-20 flex min-h-10 cursor-pointer items-center gap-2 rounded-full px-3 py-2 text-[9px] font-black uppercase tracking-widest shadow-sm backdrop-blur-md transition-all md:left-6 md:top-6 ${compareIds.includes(product.id) ? 'bg-brand-primary text-brand-cream' : 'bg-white/90 text-stone-600 hover:text-brand-primary'}`}
-                >
-                  <span className={`flex h-4 w-4 items-center justify-center rounded border ${compareIds.includes(product.id) ? 'border-brand-cream bg-brand-cream text-brand-primary' : 'border-stone-300'}`}>
-                    {compareIds.includes(product.id) && <Check size={10} />}
-                  </span>
-                  Compare
-                </label>
-
-                <div className="absolute top-4 right-4 flex flex-col gap-2 z-10 md:top-6 md:right-6">
+                <div className="mt-5 grid grid-cols-2 gap-2">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleProductClick(product); }}
+                    className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-brand-primary px-4 text-[10px] font-black uppercase tracking-widest text-brand-cream"
+                  >
+                    Customize
+                  </button>
                   <button
                     onClick={(e) => handleToggleCompare(e, product)}
-                    className={`hidden h-12 w-12 rounded-full items-center justify-center transition-all shadow-sm sm:flex ${compareIds.includes(product.id) ? 'bg-brand-primary text-brand-cream scale-110' : 'bg-white text-stone-400 hover:text-brand-primary'}`}
-                    title="Compare"
+                    className={`inline-flex min-h-11 items-center justify-center rounded-2xl border px-4 text-[10px] font-black uppercase tracking-widest transition-colors ${compareIds.includes(product.id) ? 'border-brand-primary bg-brand-primary/5 text-brand-primary' : 'border-stone-200 text-stone-600 hover:border-brand-primary hover:text-brand-primary'}`}
                   >
-                    {compareIds.includes(product.id) ? <Check size={18} /> : <Info size={18} />}
-                  </button>
-                  <button 
-                    onClick={(e) => handleToggleWishlist(e, product)}
-                    className={`flex h-11 w-11 items-center justify-center rounded-full bg-white transition-all shadow-sm md:h-12 md:w-12 ${wishlist.includes(product.id) ? 'text-red-500 scale-110' : 'text-stone-400 hover:text-red-500'}`}
-                  >
-                    <Heart size={20} fill={wishlist.includes(product.id) ? "currentColor" : "none"} />
-                  </button>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); handleProductClick(product); }}
-                    className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-primary text-brand-cream shadow-lg transition-transform hover:scale-110 md:h-12 md:w-12"
-                  >
-                    <Plus size={24} />
+                    {compareIds.includes(product.id) ? 'Compared' : 'Compare'}
                   </button>
                 </div>
-              <div className="absolute bottom-20 left-4 right-4 flex flex-wrap gap-2 md:bottom-auto md:left-6 md:right-24 md:top-20">
-                {getProductInsightLabels(product, preferences, idx).slice(0, 2).map(label => (
-                  <span key={label} className="bg-white/85 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest text-stone-600 shadow-sm">
-                    {label}
-                  </span>
-                ))}
               </div>
-              <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-6">
-                <div className="bg-white/85 backdrop-blur-md p-3 rounded-2xl flex justify-between items-center shadow-sm md:p-4">
-                  <span className="font-bold text-base md:text-lg">From KSH {product.price}</span>
-                  <div className="flex items-center gap-1 text-xs font-bold text-brand-primary">
-                    <Star size={14} fill="#5A5A40" /> {product.rating}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <h3 className="text-xl mb-1 md:text-2xl">{getServiceTitle(product)}</h3>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-stone-400 text-sm font-medium uppercase tracking-widest">{product.category}</p>
-                <p className="mt-1 flex items-center gap-1 text-xs text-stone-400"><MapPin size={12} /> {getProductLocation(product)}</p>
-              </div>
-              <button
-                onClick={(e) => handleToggleCompare(e, product)}
-                className="text-[10px] font-black uppercase tracking-widest text-brand-primary hover:text-stone-900 transition-colors"
-              >
-                {compareIds.includes(product.id) ? 'Compared' : 'Compare'}
-              </button>
-            </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          ))}
         </div>
       )}
 

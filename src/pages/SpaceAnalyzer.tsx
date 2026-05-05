@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Building2, Camera, Gift, MonitorSmartphone, Paintbrush, Upload, Sparkles, RefreshCw, ChevronRight, Share2, Crop, Check, X, Send, Play, Video, Plus, Trash2 } from 'lucide-react';
+import { Camera, Paintbrush, Upload, Sparkles, RefreshCw, ChevronRight, Share2, Crop, Check, X, Send, Play, Video, Plus, Trash2, Truck, Bike, Home, Package, Heart, ShoppingBag, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { analyzeSpace } from '../services/geminiService';
@@ -11,7 +11,19 @@ import Tooltip from '../components/Tooltip';
 import { extractDesignPreferences, getProductInsightLabels, getProductPreferenceScore, getStoredPreferences, saveStoredPreferences, trackEvent } from '../lib/behavior';
 import { defaultSiteContent, fetchSiteContent, type SiteContent } from '../lib/siteContent';
 
-const categoryIcons = [Gift, Paintbrush, MonitorSmartphone, Building2];
+const serviceIconMap: Record<string, typeof Paintbrush> = {
+  Truck,
+  Bike,
+  Paintbrush,
+  Camera,
+  Home,
+  Package,
+  Heart,
+  ShoppingBag,
+  Zap,
+  Sparkles
+};
+const getServiceIcon = (icon?: string) => serviceIconMap[icon || ''] || Paintbrush;
 
 export default function SpaceAnalyzer() {
   const [mediaFiles, setMediaFiles] = useState<{ type: 'image' | 'video', data: string }[]>([]);
@@ -30,7 +42,7 @@ export default function SpaceAnalyzer() {
   const [refinementText, setRefinementText] = useState("");
   const [products, setProducts] = useState<any[]>([]);
   const [content, setContent] = useState<SiteContent>(defaultSiteContent);
-  const [creationIntentIndex, setCreationIntentIndex] = useState(0);
+  const [selectedServiceId, setSelectedServiceId] = useState(defaultSiteContent.services[0]?.id || '');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -44,6 +56,7 @@ export default function SpaceAnalyzer() {
       .then(([snapshot, siteContent]) => {
         setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         setContent(siteContent);
+        setSelectedServiceId(current => current || siteContent.services[0]?.id || '');
       })
       .catch(() => undefined);
 
@@ -59,7 +72,9 @@ export default function SpaceAnalyzer() {
         .slice(0, 3)
     : [];
 
-  const creationIntent = content.categories[creationIntentIndex] || content.categories[0];
+  const creationIntent = content.categories[0];
+  const activeServices = content.services || [];
+  const selectedService = activeServices.find(service => service.id === selectedServiceId) || activeServices[0];
 
   const startCamera = async () => {
     try {
@@ -239,7 +254,10 @@ export default function SpaceAnalyzer() {
       const inputs = isVideo ? mediaFiles[0].data.split(',')[1] : mediaFiles.map(m => m.data.split(',')[1]);
       
       const projectDetails = refinement ?? briefText;
-      const promptContext = `${creationIntent.title}: ${creationIntent.description}. ${projectDetails || ''}`.trim();
+      const serviceContext = selectedService
+        ? `${selectedService.category}: ${selectedService.title}. ${selectedService.description}.`
+        : `${creationIntent.title}: ${creationIntent.description}.`;
+      const promptContext = `${serviceContext} ${projectDetails || ''}`.trim();
       const recommendations = await analyzeSpace(inputs, promptContext, isVideo);
       const preferences = extractDesignPreferences(recommendations, promptContext);
       saveStoredPreferences(preferences);
@@ -249,7 +267,8 @@ export default function SpaceAnalyzer() {
           mediaCount: mediaFiles.length,
           preferences,
           refinement: Boolean(refinement),
-          creationIntent: creationIntent.title
+          creationIntent: creationIntent.title,
+          selectedService: selectedService?.title || null
         }
       }).catch(() => undefined);
       setAnalysisProgress(100);
@@ -267,6 +286,8 @@ export default function SpaceAnalyzer() {
             userId: auth.currentUser.uid,
             mediaCount: mediaFiles.length,
             prompt: promptContext,
+            serviceId: selectedService?.id || null,
+            serviceName: selectedService?.title || null,
             recommendations,
             preferences,
             status: "completed",
@@ -352,32 +373,43 @@ export default function SpaceAnalyzer() {
       </div>
 
       <section className="mb-8">
-        <div className="mb-4 flex items-center justify-between gap-4">
+        <div className="mb-4 flex items-end justify-between gap-4">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">Guided start</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">Step 1</p>
             <h2 className="mt-2 text-2xl font-serif text-stone-900 md:text-3xl">What are you creating?</h2>
           </div>
-          <Link to="/shop" className="hidden text-[10px] font-black uppercase tracking-widest text-brand-primary sm:inline-flex sm:items-center sm:gap-2">
-            Browse examples <ChevronRight size={14} />
-          </Link>
+          <span className="hidden text-[10px] font-black uppercase tracking-widest text-stone-400 sm:inline">
+            Managed in Admin
+          </span>
         </div>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {content.categories.map((intent, index) => {
-            const Icon = categoryIcons[index % categoryIcons.length];
-            const selected = creationIntentIndex === index;
-            return (
-              <button
-                key={intent.title}
-                onClick={() => setCreationIntentIndex(index)}
-                className={`group min-h-32 rounded-[24px] p-5 text-left transition-all ${selected ? 'bg-brand-primary text-brand-cream shadow-xl shadow-brand-primary/20' : 'bg-white text-stone-900 shadow-sm hover:-translate-y-1 hover:shadow-md'}`}
-              >
-                <Icon size={22} className={selected ? 'text-brand-cream' : 'text-brand-primary'} />
-                <span className="mt-4 block font-bold">I want {intent.shortLabel.toLowerCase()}</span>
-                <span className={`mt-2 block text-sm leading-relaxed ${selected ? 'text-white/70' : 'text-stone-500'}`}>{intent.description}</span>
-              </button>
-            );
-          })}
-        </div>
+        {activeServices.length === 0 ? (
+          <div className="rounded-[24px] border border-stone-100 bg-white p-6 text-sm text-stone-400">
+            No services are active yet. Add services from Admin to show them here.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {activeServices.map(service => {
+              const Icon = getServiceIcon(service.icon);
+              const selected = selectedService?.id === service.id;
+              return (
+                <button
+                  key={service.id}
+                  onClick={() => setSelectedServiceId(service.id)}
+                  className={`group flex min-h-28 items-start gap-4 rounded-[24px] p-5 text-left transition-all ${selected ? 'bg-stone-900 text-white shadow-xl shadow-stone-900/10' : 'bg-white text-stone-900 shadow-sm hover:-translate-y-1 hover:shadow-md'}`}
+                >
+                  <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${selected ? 'bg-white/10 text-brand-cream' : 'bg-brand-primary/5 text-brand-primary group-hover:bg-brand-primary group-hover:text-brand-cream'}`}>
+                    <Icon size={21} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block font-bold">{service.title}</span>
+                    <span className={`mt-1 block text-sm leading-relaxed ${selected ? 'text-white/65' : 'text-stone-500'}`}>{service.description}</span>
+                    <span className={`mt-3 block text-[10px] font-black uppercase tracking-widest ${selected ? 'text-white/40' : 'text-stone-400'}`}>{service.category}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
