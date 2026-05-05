@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Homepage -->
+  <url>
+    <loc>https://maridadi.co.ke/</loc>
+    <priority>1.0</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+
+  <!-- Main Shop -->
+  <url>
+    <loc>https://maridadi.co.ke/shop</loc>
+    <priority>0.9</priority>
+    <changefreq>daily</changefreq>
+  </url>
+
+  <!-- SEO Category Pages -->
+  <url>
+    <loc>https://maridadi.co.ke/custom-banners-nairobi</loc>
+    <priority>0.9</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://maridadi.co.ke/vehicle-branding-nairobi</loc>
+    <priority>0.9</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://maridadi.co.ke/photo-mounts-kenya</loc>
+    <priority>0.9</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://maridadi.co.ke/custom-stickers-nairobi</loc>
+    <priority>0.9</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://maridadi.co.ke/custom-jewellery-kenya</loc>
+    <priority>0.9</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+
+  <!-- Secondary Pages -->
+  <url>
+    <loc>https://maridadi.co.ke/analyzer</loc>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://maridadi.co.ke/branding</loc>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+
+  <!-- User Pages (if indexable) -->
+  <url>
+    <loc>https://maridadi.co.ke/cart</loc>
+    <priority>0.7</priority>
+    <changefreq>daily</changefreq>
+  </url>
+
+  <url>
+    <loc>https://maridadi.co.ke/wishlist</loc>
+    <priority>0.7</priority>
+    <changefreq>daily</changefreq>
+  </url>
+</urlset>

@@ -1,0 +1,21 @@
+# robots.txt for Maridadi Creations
+
+User-agent: *
+Allow: /
+Allow: /shop
+Allow: /custom-banners-nairobi
+Allow: /vehicle-branding-nairobi
+Allow: /photo-mounts-kenya
+Allow: /custom-stickers-nairobi
+Allow: /custom-jewellery-kenya
+Allow: /branding
+Allow: /analyzer
+
+# Disallow auth pages
+Disallow: /admin
+
+# Sitemap
+Sitemap: https://maridadi.co.ke/sitemap.xml
+
+# Crawl delay (optional - be reasonable)
+Crawl-delay: 1

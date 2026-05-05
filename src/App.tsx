@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { HelmetProvider } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'motion/react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -15,6 +16,11 @@ import Orders from './pages/Orders';
 import Admin from './pages/Admin';
 import Wishlist from './pages/Wishlist';
 import Cart from './pages/Cart';
+import CustomBannersPage from './pages/CustomBannersPage';
+import VehicleBrandingPage from './pages/VehicleBrandingPage';
+import PhotoMountsPage from './pages/PhotoMountsPage';
+import CustomStickersPage from './pages/CustomStickersPage';
+import CustomJewelleryPage from './pages/CustomJewelleryPage';
 import { defaultSiteContent, fetchSiteContent, type SiteContent } from './lib/siteContent';
 
 function AnimatedRoutes() {
@@ -37,6 +43,19 @@ function AnimatedRoutes() {
         <Route path="/saved" element={<PageWrapper><Wishlist /></PageWrapper>} />
         <Route path="/cart" element={<PageWrapper><Cart /></PageWrapper>} />
         <Route path="/admin" element={<PageWrapper><Admin /></PageWrapper>} />
+        
+        {/* SEO Category Pages */}
+        <Route path="/custom-banners-nairobi" element={<PageWrapper><CustomBannersPage /></PageWrapper>} />
+        <Route path="/banners" element={<PageWrapper><CustomBannersPage /></PageWrapper>} />
+        <Route path="/vehicle-branding-nairobi" element={<PageWrapper><VehicleBrandingPage /></PageWrapper>} />
+        <Route path="/vehicle-branding" element={<PageWrapper><VehicleBrandingPage /></PageWrapper>} />
+        <Route path="/photo-mounts-kenya" element={<PageWrapper><PhotoMountsPage /></PageWrapper>} />
+        <Route path="/photo-mounts" element={<PageWrapper><PhotoMountsPage /></PageWrapper>} />
+        <Route path="/custom-stickers-nairobi" element={<PageWrapper><CustomStickersPage /></PageWrapper>} />
+        <Route path="/stickers" element={<PageWrapper><CustomStickersPage /></PageWrapper>} />
+        <Route path="/custom-jewellery-kenya" element={<PageWrapper><CustomJewelleryPage /></PageWrapper>} />
+        <Route path="/jewellery" element={<PageWrapper><CustomJewelleryPage /></PageWrapper>} />
+        
         <Route path="*" element={<PageWrapper><CatchAllRoute /></PageWrapper>} />
       </Routes>
     </AnimatePresence>
@@ -69,16 +88,17 @@ export default function App() {
   }, []);
 
   return (
-    <Router>
-      <ScrollToTop />
-      <div className="min-h-screen bg-brand-cream selection:bg-brand-primary/20 flex flex-col transition-colors">
-        <Header />
-        <div className="flex flex-1 flex-col lg:flex-row">
-          <Sidebar />
-          <main className="flex-1 pb-mobile-nav lg:pb-0 lg:pl-20 transition-all duration-300">
-            <AnimatedRoutes />
-            <Toaster position="bottom-right" />
-            <PWAInstallBanner />
+    <HelmetProvider>
+      <Router>
+        <ScrollToTop />
+        <div className="min-h-screen bg-brand-cream selection:bg-brand-primary/20 flex flex-col transition-colors">
+          <Header />
+          <div className="flex flex-1 flex-col lg:flex-row">
+            <Sidebar />
+            <main className="flex-1 pb-mobile-nav lg:pb-0 lg:pl-20 transition-all duration-300">
+              <AnimatedRoutes />
+              <Toaster position="bottom-right" />
+              <PWAInstallBanner />
             
             <footer className="mt-8 border-t border-brand-primary/10 bg-white py-12 lg:mt-12 lg:py-24">
             <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 gap-10 md:grid-cols-4 md:gap-12">
@@ -144,6 +164,7 @@ export default function App() {
         </main>
       </div>
     </div>
-  </Router>
+    </Router>
+    </HelmetProvider>
 );
 }
