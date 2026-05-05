@@ -14,9 +14,21 @@
     <changefreq>daily</changefreq>
   </url>
 
-  <!-- SEO Category Pages -->
+  <!-- CLUSTER 1: Branding Services -->
+  <url>
+    <loc>https://maridadi.co.ke/branding-services-nairobi</loc>
+    <priority>0.95</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+
   <url>
     <loc>https://maridadi.co.ke/custom-banners-nairobi</loc>
+    <priority>0.9</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://maridadi.co.ke/banner-printing-nairobi</loc>
     <priority>0.9</priority>
     <changefreq>weekly</changefreq>
   </url>
@@ -27,15 +39,42 @@
     <changefreq>weekly</changefreq>
   </url>
 
+  <!-- CLUSTER 2: Photo Printing -->
+  <url>
+    <loc>https://maridadi.co.ke/photo-printing-nairobi</loc>
+    <priority>0.95</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://maridadi.co.ke/photo-mounts-nairobi</loc>
+    <priority>0.9</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+
   <url>
     <loc>https://maridadi.co.ke/photo-mounts-kenya</loc>
     <priority>0.9</priority>
     <changefreq>weekly</changefreq>
   </url>
 
+  <!-- CLUSTER 3: Stickers -->
   <url>
     <loc>https://maridadi.co.ke/custom-stickers-nairobi</loc>
     <priority>0.9</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+
+  <url>
+    <loc>https://maridadi.co.ke/laptop-stickers</loc>
+    <priority>0.85</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+
+  <!-- CLUSTER 4: Personal Items & Gifts -->
+  <url>
+    <loc>https://maridadi.co.ke/personalized-gifts-kenya</loc>
+    <priority>0.95</priority>
     <changefreq>weekly</changefreq>
   </url>
 
@@ -45,7 +84,7 @@
     <changefreq>weekly</changefreq>
   </url>
 
-  <!-- Secondary Pages -->
+  <!-- Supporting Pages -->
   <url>
     <loc>https://maridadi.co.ke/analyzer</loc>
     <priority>0.8</priority>
@@ -58,7 +97,6 @@
     <changefreq>monthly</changefreq>
   </url>
 
-  <!-- User Pages (if indexable) -->
   <url>
     <loc>https://maridadi.co.ke/cart</loc>
     <priority>0.7</priority>

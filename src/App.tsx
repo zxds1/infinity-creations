@@ -21,6 +21,9 @@ import VehicleBrandingPage from './pages/VehicleBrandingPage';
 import PhotoMountsPage from './pages/PhotoMountsPage';
 import CustomStickersPage from './pages/CustomStickersPage';
 import CustomJewelleryPage from './pages/CustomJewelleryPage';
+import BrandingServicesPage from './pages/BrandingServicesPage';
+import PhotoPrintingPage from './pages/PhotoPrintingPage';
+import PersonalizedGiftsPage from './pages/PersonalizedGiftsPage';
 import { defaultSiteContent, fetchSiteContent, type SiteContent } from './lib/siteContent';
 
 function AnimatedRoutes() {
@@ -45,14 +48,30 @@ function AnimatedRoutes() {
         <Route path="/admin" element={<PageWrapper><Admin /></PageWrapper>} />
         
         {/* SEO Category Pages */}
+        {/* CLUSTER: Branding Services */}
+        <Route path="/branding-services-nairobi" element={<PageWrapper><BrandingServicesPage /></PageWrapper>} />
+        <Route path="/branding-services" element={<PageWrapper><BrandingServicesPage /></PageWrapper>} />
         <Route path="/custom-banners-nairobi" element={<PageWrapper><CustomBannersPage /></PageWrapper>} />
+        <Route path="/banner-printing-nairobi" element={<PageWrapper><CustomBannersPage /></PageWrapper>} />
         <Route path="/banners" element={<PageWrapper><CustomBannersPage /></PageWrapper>} />
         <Route path="/vehicle-branding-nairobi" element={<PageWrapper><VehicleBrandingPage /></PageWrapper>} />
         <Route path="/vehicle-branding" element={<PageWrapper><VehicleBrandingPage /></PageWrapper>} />
+        
+        {/* CLUSTER: Photo Printing & Decor */}
+        <Route path="/photo-printing-nairobi" element={<PageWrapper><PhotoPrintingPage /></PageWrapper>} />
+        <Route path="/photo-printing" element={<PageWrapper><PhotoPrintingPage /></PageWrapper>} />
+        <Route path="/photo-mounts-nairobi" element={<PageWrapper><PhotoMountsPage /></PageWrapper>} />
         <Route path="/photo-mounts-kenya" element={<PageWrapper><PhotoMountsPage /></PageWrapper>} />
         <Route path="/photo-mounts" element={<PageWrapper><PhotoMountsPage /></PageWrapper>} />
+        
+        {/* CLUSTER: Stickers */}
         <Route path="/custom-stickers-nairobi" element={<PageWrapper><CustomStickersPage /></PageWrapper>} />
         <Route path="/stickers" element={<PageWrapper><CustomStickersPage /></PageWrapper>} />
+        <Route path="/laptop-stickers" element={<PageWrapper><CustomStickersPage /></PageWrapper>} />
+        
+        {/* CLUSTER: Personal Items & Gifts */}
+        <Route path="/personalized-gifts-kenya" element={<PageWrapper><PersonalizedGiftsPage /></PageWrapper>} />
+        <Route path="/personalized-gifts" element={<PageWrapper><PersonalizedGiftsPage /></PageWrapper>} />
         <Route path="/custom-jewellery-kenya" element={<PageWrapper><CustomJewelleryPage /></PageWrapper>} />
         <Route path="/jewellery" element={<PageWrapper><CustomJewelleryPage /></PageWrapper>} />
         
