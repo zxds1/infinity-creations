@@ -18,6 +18,7 @@ interface CartItem {
   quantity: number;
   deliveryAddress: string;
   variationName?: string;
+  customNotes?: string;
   createdAt: any;
 }
 
@@ -373,6 +374,12 @@ export default function Cart() {
                             {item.variationName && (
                               <div className="text-[10px] font-black uppercase tracking-widest text-stone-400 mt-1">
                                 Style: <span className="text-brand-primary">{item.variationName}</span>
+                              </div>
+                            )}
+                            {item.customNotes && (
+                              <div className="mt-3 rounded-2xl bg-stone-50 p-3 text-sm leading-relaxed text-stone-600">
+                                <span className="mb-1 block text-[9px] font-black uppercase tracking-widest text-stone-400">Customization</span>
+                                {item.customNotes}
                               </div>
                             )}
                             <p className="text-brand-primary font-bold text-lg mt-1">KSH {item.price}</p>

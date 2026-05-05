@@ -2,7 +2,7 @@ import { Fragment, useState, useEffect } from 'react';
 import { ShoppingBag, Star, Plus, MapPin, Package, Info, Minus, Check, Search, SlidersHorizontal, ShieldCheck, Store, Sparkles, ArrowRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { db, auth, collection, getDocs, addDoc, serverTimestamp, query, where, orderBy, deleteDoc, doc } from '../lib/firebase';
 import {
   assertProductExists,
@@ -46,11 +46,12 @@ export default function Shop() {
   });
   const [preferences, setPreferences] = useState<DesignPreferences>(() => getStoredPreferences());
   const [content, setContent] = useState<SiteContent>(defaultSiteContent);
-  const navigate = useNavigate();
   
   // Cart state for the current item being added
   const [quantity, setQuantity] = useState(1);
   const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [customizationNotes, setCustomizationNotes] = useState("");
+  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -121,23 +122,14 @@ export default function Shop() {
 
   const prefersStructuredCategory = (category: string) => /business|banner|vehicle|branding/i.test(category);
 
-  const getCustomizeUrl = (product: any) => {
-    const params = new URLSearchParams({
-      product: product.name || 'Custom project',
-      category: product.category || 'Custom',
-      price: String(product.price || ''),
-      idea: product.description || product.name || ''
-    });
-    return `/analyzer?${params.toString()}`;
-  };
-
   const handleCustomizeProduct = (product: any) => {
     trackEvent({
-      eventType: 'analyzer',
+      eventType: 'intent',
       productId: product.id,
-      metadata: { source: 'explore-customize', category: product.category }
+      metadata: { source: 'explore-inline-customize', category: product.category }
     }).catch(() => undefined);
-    navigate(getCustomizeUrl(product));
+    handleProductClick(product);
+    setCustomizationNotes(`I want to customize ${product.name || 'this item'} for my style, size, colors, wording, and finish.`);
   };
 
   const priceMatches = (product: any) => {
@@ -196,9 +188,16 @@ export default function Shop() {
     setSelectedProduct(product);
     setQuantity(1);
     setDeliveryAddress("");
+    setCustomizationNotes("");
     setIsZoomed(false);
     setSelectedColor(product.variations?.[0]?.name || null);
     trackEvent({ eventType: 'view', productId: product.id, metadata: { category: product.category } }).catch(() => undefined);
+  };
+
+  const getMasonrySpan = (index: number) => {
+    const estimatedImageHeight = [220, 280, 190, 250, 320, 210][index % 6];
+    const estimatedContentHeight = 88;
+    return Math.ceil((estimatedImageHeight + estimatedContentHeight) / 8);
   };
 
   const similarProducts = selectedProduct
@@ -314,8 +313,12 @@ export default function Shop() {
   };
 
   const handleAddToCart = async (product: any) => {
+    if (!customizationNotes.trim()) {
+      toast.error("Please add your customization details");
+      return;
+    }
     if (!deliveryAddress.trim()) {
-      toast.error("Please provide a delivery address");
+      toast.error("Please provide pickup or delivery details");
       return;
     }
 
@@ -332,12 +335,14 @@ export default function Shop() {
           image: currentVariation?.image || product.image,
           quantity,
           deliveryAddress,
+          customNotes: customizationNotes.trim(),
           variationName: selectedColor,
           createdAt: new Date().toISOString()
         });
-        toast.success(`${product.name} added to your demo order.`);
+        toast.success(`${product.name} customized and added to cart.`);
         setQuantity(1);
         setDeliveryAddress("");
+        setCustomizationNotes("");
         setSelectedProduct(null);
         return;
       }
@@ -349,17 +354,19 @@ export default function Shop() {
         image: currentVariation?.image || product.image,
         quantity,
         deliveryAddress,
+        customNotes: customizationNotes.trim(),
         variationName: selectedColor,
         createdAt: serverTimestamp()
       });
       trackEvent({
         eventType: 'cart',
         productId: product.id,
-        metadata: { quantity, variationName: selectedColor, category: product.category }
+        metadata: { quantity, variationName: selectedColor, category: product.category, customized: true }
       }).catch(() => undefined);
-      toast.success(`${product.name} added to cart!`);
+      toast.success(`${product.name} customized and added to cart.`);
       setQuantity(1);
       setDeliveryAddress("");
+      setCustomizationNotes("");
       setSelectedProduct(null);
     } catch (error) {
       console.error(error);
@@ -527,12 +534,12 @@ export default function Shop() {
       )}
 
       {loading ? (
-        <div className="grid grid-cols-1 gap-y-10 md:grid-cols-2 md:gap-x-8 md:gap-y-16 lg:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map(item => (
-            <div key={item} className="animate-pulse">
-              <div className="aspect-[4/5] rounded-[40px] bg-white" />
-              <div className="mt-6 h-6 w-2/3 rounded bg-white" />
-              <div className="mt-3 h-4 w-1/3 rounded bg-white" />
+        <div className="grid grid-cols-2 gap-[10px] md:grid-cols-3 md:gap-[14px] xl:grid-cols-4 xl:gap-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(item => (
+            <div key={item} className="animate-pulse rounded-2xl bg-white p-2">
+              <div className={`${item % 3 === 0 ? 'aspect-[3/4]' : item % 2 === 0 ? 'aspect-square' : 'aspect-[4/5]'} rounded-xl bg-stone-100`} />
+              <div className="mt-3 h-4 w-2/3 rounded bg-stone-100" />
+              <div className="mt-2 h-3 w-1/2 rounded bg-stone-100" />
             </div>
           ))}
         </div>
@@ -559,60 +566,56 @@ export default function Shop() {
           </button>
         </div>
       ) : viewMode === 'inspiration' ? (
-        <div className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4">
+        <div
+          className="grid grid-cols-2 gap-[10px] [grid-auto-rows:8px] md:grid-cols-3 md:gap-[14px] xl:grid-cols-4 xl:gap-4"
+        >
           {filteredProducts.map((product, idx) => (
             <motion.div
               key={product.id}
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: Math.min(idx * 0.04, 0.35) }}
-              className="group mb-4 break-inside-avoid overflow-hidden rounded-[28px] bg-white shadow-sm"
+              className="group overflow-hidden rounded-2xl bg-white shadow-sm md:rounded-[20px]"
+              style={{ gridRowEnd: `span ${getMasonrySpan(idx)}` }}
             >
               <button
                 onClick={() => handleProductClick(product)}
                 className="block w-full text-left"
               >
-                <div className={`relative overflow-hidden bg-stone-100 ${idx % 5 === 0 ? 'aspect-[3/4]' : idx % 3 === 0 ? 'aspect-[4/5]' : idx % 2 === 0 ? 'aspect-square' : 'aspect-[4/3]'}`}>
+                <div className={`relative overflow-hidden rounded-xl bg-stone-100 ${idx % 5 === 0 ? 'aspect-[3/4]' : idx % 3 === 0 ? 'aspect-[4/5]' : idx % 2 === 0 ? 'aspect-square' : 'aspect-[4/3]'}`}>
+                  {!loadedImages[product.id] && (
+                    <div className="absolute inset-0 animate-pulse bg-stone-200 blur-sm" />
+                  )}
                   <img
                     src={product.image}
                     alt={product.name}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                    onLoad={() => setLoadedImages(prev => ({ ...prev, [product.id]: true }))}
+                    className={`h-full w-full object-cover transition-all duration-500 group-hover:scale-105 ${loadedImages[product.id] ? 'opacity-100 blur-0' : 'opacity-0 blur-md'}`}
                     referrerPolicy="no-referrer"
                   />
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-stone-950/75 via-stone-950/10 to-transparent p-4 opacity-100">
-                    <span className="inline-flex rounded-full bg-white/90 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-stone-700">
+                  <span className="absolute left-2 top-2 inline-flex rounded-full bg-white/80 px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-stone-700 backdrop-blur md:left-3 md:top-3">
                       {getProductInsightLabels(product, preferences, idx)[0] || 'Popular'}
-                    </span>
+                  </span>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-3 opacity-100 md:p-4">
+                    <h3 className="line-clamp-2 text-sm font-bold leading-tight text-white md:text-base">{product.name}</h3>
+                    <p className="mt-1 text-[9px] font-black uppercase tracking-widest text-white/70">{product.category || 'Custom'}</p>
                   </div>
                 </div>
               </button>
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h3 className="truncate text-base font-bold text-stone-900">{product.name}</h3>
-                    <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-stone-400">{product.category || 'Custom'}</p>
-                  </div>
+              <div className="grid grid-cols-2 gap-2 p-2 md:p-3">
                   <button
                     onClick={(event) => handleToggleWishlist(event, product)}
-                    className={`shrink-0 rounded-full px-3 py-2 text-[9px] font-black uppercase tracking-widest ${wishlist.includes(product.id) ? 'bg-brand-primary text-brand-cream' : 'bg-stone-50 text-stone-500 hover:text-brand-primary'}`}
+                    className={`min-h-9 rounded-xl px-2 text-[9px] font-black uppercase tracking-widest ${wishlist.includes(product.id) ? 'bg-brand-primary text-brand-cream' : 'bg-stone-50 text-stone-500 hover:text-brand-primary'}`}
                   >
                     {wishlist.includes(product.id) ? 'Saved' : 'Save'}
                   </button>
-                </div>
-                <div className="mt-4 grid grid-cols-2 gap-2">
                   <button
                     onClick={() => handleProductClick(product)}
-                    className="min-h-10 rounded-2xl bg-stone-900 px-4 text-[10px] font-black uppercase tracking-widest text-white"
+                    className="min-h-9 rounded-xl bg-stone-900 px-2 text-[9px] font-black uppercase tracking-widest text-white"
                   >
                     View
                   </button>
-                  <button
-                    onClick={() => handleCustomizeProduct(product)}
-                    className="min-h-10 rounded-2xl bg-brand-primary px-4 text-[10px] font-black uppercase tracking-widest text-brand-cream"
-                  >
-                    Customize
-                  </button>
-                </div>
               </div>
             </motion.div>
           ))}
@@ -632,6 +635,7 @@ export default function Shop() {
                 <motion.img 
                   src={product.image} 
                   alt={product.name} 
+                  loading="lazy"
                   whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.45 }}
                   className="h-full w-full origin-center object-cover"
@@ -778,14 +782,14 @@ export default function Shop() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 30 }}
-          className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] left-1/2 z-[70] w-[calc(100%-1rem)] max-w-4xl -translate-x-1/2 rounded-3xl bg-stone-900 text-white shadow-2xl lg:bottom-6 lg:w-[calc(100%-2rem)]"
+          className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] left-1/2 z-[70] w-[calc(100%-1rem)] max-w-4xl -translate-x-1/2 rounded-3xl bg-stone-900 text-white shadow-2xl lg:bottom-6 lg:left-auto lg:right-6 lg:w-80 lg:translate-x-0"
           >
             <div className="flex flex-col gap-3 p-3 md:flex-row md:items-center md:justify-between md:p-4">
               <div>
                 <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Comparison set</div>
                 <div className="mt-1 text-sm font-bold">Compare ({comparedProducts.length}) service idea{comparedProducts.length === 1 ? '' : 's'} selected</div>
               </div>
-              <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto scrollbar-hide md:justify-end md:gap-3">
+              <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto scrollbar-hide md:justify-end md:gap-3 lg:hidden">
                 {comparedProducts.map((product: any) => (
                   <button
                     key={product.id}
@@ -824,7 +828,7 @@ export default function Shop() {
       {/* Product Detail Modal */}
       <AnimatePresence>
         {selectedProduct && (
-          <div className="fixed inset-0 z-[60] flex items-end justify-center p-0 md:items-center md:p-4">
+          <div className="fixed inset-0 z-[60] flex items-end justify-center p-0 md:items-stretch md:justify-end md:p-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -833,12 +837,12 @@ export default function Shop() {
               className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
             />
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-brand-cream w-full max-w-5xl overflow-hidden rounded-t-[32px] flex flex-col md:flex-row relative z-10 shadow-2xl max-h-[92svh] md:max-h-[90vh] md:rounded-[40px]"
+              initial={{ opacity: 0, y: 28, x: 0 }}
+              animate={{ opacity: 1, y: 0, x: 0 }}
+              exit={{ opacity: 0, y: 28, x: 0 }}
+              className="relative z-10 flex max-h-[92svh] w-full flex-col overflow-hidden rounded-t-[32px] bg-brand-cream shadow-2xl md:h-full md:max-h-none md:max-w-xl md:rounded-[32px]"
             >
-              <div className="h-[34svh] overflow-hidden relative cursor-zoom-in group/image bg-stone-100 md:h-auto md:w-1/2" onClick={() => setIsZoomed(!isZoomed)}>
+              <div className="h-[34svh] overflow-hidden relative cursor-zoom-in group/image bg-stone-100 md:h-72 md:w-full" onClick={() => setIsZoomed(!isZoomed)}>
                 <motion.img 
                   key={selectedColor}
                   initial={{ opacity: 0.8, scale: 1.1 }}
@@ -868,7 +872,7 @@ export default function Shop() {
                   </div>
                 )}
               </div>
-              <div className="flex max-h-[58svh] flex-col overflow-y-auto scroll-smooth p-5 custom-scrollbar relative md:max-h-full md:w-1/2 md:p-12">
+              <div className="relative flex flex-1 flex-col overflow-y-auto scroll-smooth p-5 custom-scrollbar md:p-8">
                 <button 
                   onClick={() => setSelectedProduct(null)}
                   className="sticky top-0 ml-auto p-3 text-stone-300 hover:text-brand-primary hover:bg-stone-50 rounded-full transition-all z-20 bg-white/80 backdrop-blur-md shadow-sm mb-4"
@@ -974,6 +978,7 @@ export default function Shop() {
                             setSelectedColor(product.variations?.[0]?.name || null);
                             setQuantity(1);
                             setDeliveryAddress('');
+                            setCustomizationNotes('');
                           }}
                           className="flex items-center gap-3 rounded-2xl bg-white p-3 text-left hover:bg-stone-50"
                         >
@@ -989,16 +994,19 @@ export default function Shop() {
                   </div>
                 )}
 
-                {/* Prominent order action for modal */}
-                <button 
-                  onClick={() => handleAddToCart(selectedProduct)}
-                  className="mb-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-brand-primary py-4 text-base font-bold text-brand-cream shadow-xl shadow-brand-primary/20 transition-transform hover:scale-[1.02] md:mb-8 md:py-5 md:text-lg"
-                >
-                  <ShoppingBag size={24} /> Start order
-                </button>
-
-                {/* Custom Options: Quantity & Address */}
+                {/* Custom Options: Quantity, item notes, and delivery */}
                 <div className="space-y-6 mb-8">
+                  <div>
+                    <label className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-stone-400">Customize this order</label>
+                    <textarea
+                      data-customization-notes
+                      value={customizationNotes}
+                      onChange={(e) => setCustomizationNotes(e.target.value)}
+                      placeholder="Colors, size, wording, finish, occasion, logo placement, or anything you want changed..."
+                      className="min-h-[120px] w-full rounded-2xl border border-stone-100 bg-stone-50 p-4 text-sm focus:outline-brand-primary"
+                    />
+                  </div>
+
                   <div className="flex items-center justify-between bg-stone-50 p-4 rounded-2xl border border-stone-100">
                     <span className="text-xs font-bold uppercase tracking-widest text-stone-400">Quantity</span>
                     <div className="flex items-center gap-4">
@@ -1019,14 +1027,21 @@ export default function Shop() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-2">Project and delivery notes</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-2">Pickup or delivery details</label>
                     <textarea 
                       value={deliveryAddress}
                       onChange={(e) => setDeliveryAddress(e.target.value)}
-                      placeholder="Describe your idea, preferred colors, size, pickup/delivery notes..."
+                      placeholder="Delivery address, pickup preference, phone note, or location details..."
                       className="w-full bg-stone-50 border border-stone-100 rounded-2xl p-4 text-sm focus:outline-brand-primary min-h-[80px]"
                     />
                   </div>
+
+                  <button
+                    onClick={() => handleAddToCart(selectedProduct)}
+                    className="flex w-full items-center justify-center gap-3 rounded-2xl bg-brand-primary py-4 text-base font-bold text-brand-cream shadow-xl shadow-brand-primary/20 transition-transform hover:scale-[1.02] md:py-5 md:text-lg"
+                  >
+                    <ShoppingBag size={24} /> Add customized order to cart
+                  </button>
                 </div>
 
                 {/* Reviews Section */}
@@ -1088,20 +1103,20 @@ export default function Shop() {
                 <div className="mt-auto space-y-4">
                   <div className="grid grid-cols-2 gap-3">
                     <button 
-                      onClick={() => handleCustomizeProduct(selectedProduct)}
+                      onClick={() => document.querySelector<HTMLTextAreaElement>('[data-customization-notes]')?.focus()}
                       className="bg-stone-100 text-stone-900 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 hover:bg-stone-200 transition-colors"
                     >
-                      <Sparkles size={20} /> AI customize
+                      <Sparkles size={20} /> Edit details
                     </button>
                     <button 
-                      onClick={() => handleOrder(selectedProduct)}
+                      onClick={(event) => handleToggleCompare(event, selectedProduct)}
                       className="bg-brand-primary text-brand-cream py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shadow-lg shadow-brand-primary/20"
                     >
-                      <ShoppingBag size={20} /> Request design
+                      <Plus size={20} /> Compare
                     </button>
                   </div>
-                  <button onClick={() => handleOrder(selectedProduct)} className="w-full border border-stone-200 text-stone-600 py-4 rounded-2xl font-bold hover:bg-stone-50 transition-colors">
-                    Talk to a designer
+                  <button onClick={() => handleAddToCart(selectedProduct)} className="w-full border border-stone-200 text-stone-600 py-4 rounded-2xl font-bold hover:bg-stone-50 transition-colors">
+                    Save customization for checkout
                   </button>
                 </div>
               </div>

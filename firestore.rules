@@ -93,7 +93,7 @@ service cloud.firestore {
         && isValidCartItem(request.resource.data);
       allow update: if ((isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin())
         && request.resource.data.productId == resource.data.productId
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['quantity', 'deliveryAddress', 'updatedAt'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['quantity', 'deliveryAddress', 'customNotes', 'updatedAt'])
         && (!('quantity' in request.resource.data) || (request.resource.data.quantity is int && request.resource.data.quantity >= 1 && request.resource.data.quantity <= 99));
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
 
@@ -101,6 +101,7 @@ service cloud.firestore {
         return productExists(item.productId)
           && item.productName is string
           && item.productName.size() <= 160
+          && (!('customNotes' in item) || (item.customNotes is string && item.customNotes.size() <= 2000))
           && item.price is number
           && item.price >= 0
           && item.quantity is int

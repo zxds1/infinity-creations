@@ -53,6 +53,7 @@ interface CheckoutLineItem {
   unitPrice: number;
   lineTotal: number;
   variationName?: string;
+  customNotes?: string;
   category?: string;
 }
 
@@ -127,6 +128,7 @@ async function buildVerifiedCheckoutItems(uid: string, cartItemIds: string[]) {
       unitPrice,
       lineTotal: unitPrice * quantity,
       variationName: sanitizeString(cart.variationName, 80) || undefined,
+      customNotes: sanitizeString(cart.customNotes, 2000) || undefined,
       category: sanitizeString(product.category, 80) || undefined
     });
   }
