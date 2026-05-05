@@ -65,17 +65,17 @@ export default function App() {
                   <span className="font-serif text-xl font-semibold tracking-tight text-brand-primary">Maridadi Creations</span>
                 </div>
                 <p className="text-stone-400 max-w-sm leading-relaxed mb-8">
-                  Premium interior design, custom furniture, and professional branding services for homes and businesses.
+                  Design, print, and branding services for personal style, spaces, devices, and businesses.
                 </p>
                 <p className="text-sm font-bold text-stone-500 uppercase tracking-widest">Message us @Maridadi Creations</p>
               </div>
               <div>
                 <h4 className="font-bold uppercase tracking-widest text-xs text-stone-900 mb-6">Explore</h4>
                 <ul className="space-y-4 text-stone-500 text-sm">
-                  <li><Link to="/analyzer" className="hover:text-brand-primary">Room Style Finder</Link></li>
-                  <li><Link to="/shop" className="hover:text-brand-primary">Custom Furniture</Link></li>
-                  <li><Link to="/shop" className="hover:text-brand-primary">Jewelry Collection</Link></li>
-                  <li><Link to="/branding" className="hover:text-brand-primary">Branding Services</Link></li>
+                  <li><Link to="/shop" className="hover:text-brand-primary">Explore</Link></li>
+                  <li><Link to="/analyzer" className="hover:text-brand-primary">Customize</Link></li>
+                  <li><Link to="/branding" className="hover:text-brand-primary">For Business</Link></li>
+                  <li><Link to="/cart" className="hover:text-brand-primary">My Activity</Link></li>
                 </ul>
               </div>
               <div>

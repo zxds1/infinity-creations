@@ -90,7 +90,7 @@ export default function Orders() {
       };
       await addDoc(collection(db, 'cart'), cartItem);
       trackEvent({ eventType: 'cart', productId: cartItem.productId, metadata: { source: 'activity-reorder' } }).catch(() => undefined);
-      toast.success("Added to cart for reorder!");
+      toast.success("Added to your order.");
     } catch (err) {
       toast.error("Failed to reorder");
     }
@@ -119,7 +119,7 @@ export default function Orders() {
     if (Array.isArray(items) && items.length > 0) {
       return items.length === 1 ? items[0].productName : `${items[0].productName} + ${items.length - 1} more`;
     }
-    return order.details?.productName || order.details?.serviceName || "Checkout Order";
+    return order.details?.productName || order.details?.serviceName || "Custom order";
   };
 
   const getOrderTotal = (order: Order) => order.amounts?.total || order.totalAmount || 0;
@@ -138,8 +138,8 @@ export default function Orders() {
   if (authReady && !user) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-16 text-center md:py-24">
-        <h1 className="text-4xl mb-6">Sign in to view your orders</h1>
-        <p className="text-stone-500">Track purchases, custom requests, and delivery updates here.</p>
+        <h1 className="text-4xl mb-6">Sign in to view your activity</h1>
+        <p className="text-stone-500">Track your orders, saved designs, and custom requests.</p>
       </div>
     );
   }
@@ -149,8 +149,8 @@ export default function Orders() {
       <div className="mb-8 flex flex-col gap-6 md:mb-12 md:gap-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h1 className="mb-3 text-4xl leading-none md:mb-4 md:text-6xl">Your <span className="italic font-light">Orders</span></h1>
-            <p className="text-stone-500">Follow payment status, preparation, shipping, and delivery updates.</p>
+            <h1 className="mb-3 text-4xl leading-none md:mb-4 md:text-6xl">Your <span className="italic font-light">Activity</span></h1>
+            <p className="text-stone-500">Track your orders, saved designs, and custom requests.</p>
           </div>
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
@@ -158,12 +158,12 @@ export default function Orders() {
               <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide sm:flex-wrap">
                 {[
                   { label: 'All', value: 'All' },
-                  { label: 'Pending Payment', value: 'pending_payment' },
-                  { label: 'Paid', value: 'Paid' },
-                  { label: 'Processing', value: 'Processing' },
-                  { label: 'Shipped', value: 'Shipped' },
-                  { label: 'Delivered', value: 'Delivered' },
-                  { label: 'Payment Failed', value: 'payment_failed' }
+                  { label: 'Order received', value: 'pending_payment' },
+                  { label: 'Confirmed', value: 'Paid' },
+                  { label: 'Design in progress', value: 'Processing' },
+                  { label: 'Printing', value: 'Shipped' },
+                  { label: 'Ready / Delivered', value: 'Delivered' },
+                  { label: 'Payment issue', value: 'payment_failed' }
                 ].map(f => (
                   <button
                     key={f.value}
@@ -178,11 +178,11 @@ export default function Orders() {
             <div className="flex items-center gap-3">
               <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 sm:w-16">Type</span>
               <div className="flex flex-wrap gap-2">
-                {['All', 'Checkout'].map(f => (
+                {['All', 'Order'].map(f => (
                   <button
                     key={f}
-                    onClick={() => setTypeFilter(f)}
-                    className={`px-4 py-1 rounded-full text-[10px] font-bold transition-all border ${typeFilter === f ? 'bg-brand-primary text-brand-cream border-brand-primary' : 'bg-transparent text-stone-500 border-stone-200 hover:border-brand-primary'}`}
+                    onClick={() => setTypeFilter(f === 'Order' ? 'Checkout' : f)}
+                    className={`px-4 py-1 rounded-full text-[10px] font-bold transition-all border ${(f === 'Order' ? typeFilter === 'Checkout' : typeFilter === f) ? 'bg-brand-primary text-brand-cream border-brand-primary' : 'bg-transparent text-stone-500 border-stone-200 hover:border-brand-primary'}`}
                   >
                     {f}
                   </button>
@@ -202,8 +202,8 @@ export default function Orders() {
           <div className="w-20 h-20 rounded-full bg-stone-50 flex items-center justify-center mx-auto mb-6 text-stone-300">
             <Package size={40} />
           </div>
-          <h3 className="text-2xl mb-2 font-serif">No {statusFilter !== 'All' ? statusFilter.toLowerCase() : ''} orders yet</h3>
-          <p className="text-stone-400">Start checkout from your cart when you are ready to buy.</p>
+          <h3 className="text-2xl mb-2 font-serif">Nothing here yet</h3>
+          <p className="text-stone-400">Nothing here yet - start by exploring designs.</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -231,7 +231,7 @@ export default function Orders() {
                       {getOrderTitle(order)}
                     </h3>
                     
-                    {/* Enhanced Status Timeline */}
+                    {/* Status timeline */}
                     <div className="mt-8 mb-10 hidden sm:block">
                       <div className="relative flex justify-between">
                         {/* Timeline Line */}
@@ -244,11 +244,11 @@ export default function Orders() {
                         />
                         
                         {[
-                          { id: 'pending_payment', label: 'Awaiting Payment', icon: Clock },
-                          { id: 'paid', label: 'Payment Verified', icon: CheckCircle2 },
-                          { id: 'processing', label: 'Processing', icon: RefreshCw },
-                          { id: 'shipped', label: 'Shipped', icon: Truck },
-                          { id: 'delivered', label: 'Delivered', icon: CheckCircle2 }
+                          { id: 'pending_payment', label: 'Order received', icon: Clock },
+                          { id: 'paid', label: 'Confirmed', icon: CheckCircle2 },
+                          { id: 'processing', label: 'Design in progress', icon: RefreshCw },
+                          { id: 'shipped', label: 'Printing', icon: Truck },
+                          { id: 'delivered', label: 'Ready / Delivered', icon: CheckCircle2 }
                         ].map((step, idx) => {
                           const steps = ['pending_payment', 'paid', 'processing', 'shipped', 'delivered'];
                           const currentIdx = steps.indexOf((order.status || '').toLowerCase());
@@ -274,7 +274,7 @@ export default function Orders() {
                                     animate={{ opacity: 1 }}
                                     className="text-[7px] text-brand-primary/60 font-black uppercase tracking-tighter"
                                   >
-                                    Current Stage
+                                    Current step
                                   </motion.span>
                                 )}
                               </div>
@@ -285,7 +285,7 @@ export default function Orders() {
                     </div>
 
                     <p className="text-stone-400 text-sm mt-1">
-                      {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Processing...'}
+                      {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Preparing your options...'}
                     </p>
                   </div>
 

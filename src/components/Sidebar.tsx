@@ -30,15 +30,21 @@ export default function Sidebar() {
   }, []);
 
   const navItems = [
-    { name: 'Discover', path: '/shop', icon: ShoppingBag },
-    { name: 'Design', path: '/analyzer', icon: Camera },
+    { name: 'Explore', path: '/shop', icon: ShoppingBag },
+    { name: 'Customize', path: '/analyzer', icon: Camera },
+    { name: 'For Business', path: '/branding', icon: Paintbrush },
     { name: 'Saved', path: '/wishlist', icon: Heart },
     { name: 'Cart', path: '/cart', icon: ShoppingBag },
-    { name: 'Activity', path: '/orders', icon: UserIcon },
-    { name: 'Branding', path: '/branding', icon: Paintbrush },
+    { name: 'My Activity', path: '/orders', icon: UserIcon },
   ];
 
-  const mobileNavItems = navItems.slice(0, 5);
+  const mobileNavItems = [
+    { name: 'Explore', path: '/shop', icon: ShoppingBag },
+    { name: 'Customize', path: '/analyzer', icon: Camera },
+    { name: 'Business', path: '/branding', icon: Paintbrush },
+    { name: 'Saved', path: '/wishlist', icon: Heart },
+    { name: 'Activity', path: '/orders', icon: UserIcon },
+  ];
 
   const sidebarVariants = {
     expanded: { width: '280px' },
@@ -151,7 +157,7 @@ export default function Sidebar() {
                     exit={{ opacity: 0, x: -10 }}
                     className="font-bold text-sm tracking-widest uppercase whitespace-nowrap"
                   >
-                    Admin Panel
+                    Admin
                   </motion.span>
                 )}
               </AnimatePresence>

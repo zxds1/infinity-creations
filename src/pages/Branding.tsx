@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import { auth, db, collection, addDoc, serverTimestamp, getDocs } from '../lib/firebase';
 import { trackEvent } from '../lib/behavior';
+import { defaultSiteContent, fetchSiteContent, type SiteContent } from '../lib/siteContent';
 
 export default function Branding() {
   const [brandingServices, setBrandingServices] = useState<any[]>([]);
@@ -12,6 +13,7 @@ export default function Branding() {
   const [image, setImage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [content, setContent] = useState<SiteContent>(defaultSiteContent);
   const [sellerProfile, setSellerProfile] = useState({
     businessType: '',
     positioning: '',
@@ -21,7 +23,11 @@ export default function Branding() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const snap = await getDocs(collection(db, 'services'));
+        const [snap, siteContent] = await Promise.all([
+          getDocs(collection(db, 'services')),
+          fetchSiteContent()
+        ]);
+        setContent(siteContent);
         const servicesData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         if (servicesData.length === 0) {
           const initial = [
@@ -110,13 +116,56 @@ export default function Branding() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-24">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-start">
+    <div className="max-w-7xl mx-auto px-4 py-12 md:py-20">
+      <div className="mb-12 overflow-hidden rounded-[32px] bg-stone-950 p-6 text-white md:rounded-[40px] md:p-10">
+        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div>
+            <p className="mb-4 text-[10px] font-black uppercase tracking-[0.24em] text-white/45">For business</p>
+            <h1 className="max-w-3xl text-4xl font-semibold leading-none md:text-7xl">{content.businessTitle}</h1>
+            <p className="mt-5 max-w-2xl text-sm leading-relaxed text-white/65 md:text-lg">
+              {content.businessSubtitle}
+            </p>
+          </div>
+          <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-white/40">Business services</p>
+            <div className="mt-6 space-y-5">
+              {[
+                'Banners & signage',
+                'Vehicle branding',
+                'Custom branding'
+              ].map(item => (
+                <div key={item} className="border-t border-white/10 pt-5">
+                  <p className="text-lg font-bold">{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
         <div>
-          <h1 className="text-6xl md:text-8xl mb-8 leading-[0.9]">Transform <br /><span className="italic font-light">Everything</span></h1>
-          <p className="text-xl text-stone-500 mb-12 max-w-lg leading-relaxed">
-            Professional branding for vehicles, fashion labels, signage, and custom business projects.
+          <h2 className="text-4xl md:text-6xl mb-6 leading-[0.95]">Start your <span className="italic font-light">branding</span></h2>
+          <p className="text-lg text-stone-500 mb-8 max-w-lg leading-relaxed">
+            Pick the closest starting point. Your final design can still be customized for your brand, colors, size, and message.
           </p>
+
+          <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {[
+              { icon: Megaphone, title: 'Banners & Signage', text: 'Professional designs for shops, events, and promotions.' },
+              { icon: Truck, title: 'Vehicle Branding', text: 'Make your boda boda or vehicle stand out.' },
+              { icon: Paintbrush, title: 'Custom Branding', text: 'Unique designs tailored to your business identity.' }
+            ].map(item => {
+              const Icon = item.icon;
+              return (
+                <div key={item.title} className="rounded-[24px] bg-white p-5 shadow-sm">
+                  <Icon size={20} className="text-brand-primary" />
+                  <h3 className="mt-4 font-bold text-stone-900">{item.title}</h3>
+                  <p className="mt-1 text-sm text-stone-500">{item.text}</p>
+                </div>
+              );
+            })}
+          </div>
 
           <div className="space-y-4">
             {loading ? (
@@ -157,7 +206,7 @@ export default function Branding() {
             >
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
               
-              <h2 className="text-4xl mb-4 font-serif">Start your project</h2>
+              <h2 className="text-4xl mb-4 font-serif">Request a design</h2>
               <p className="text-white/70 mb-8">{selectedService.desc || selectedService.description}</p>
 
             <div className="space-y-6">
@@ -184,7 +233,7 @@ export default function Branding() {
                 <textarea 
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Tell us about the project, dimensions, colors, or your boda boda model..."
+                  placeholder="Tell us what you are branding, size, wording, colors, deadline, or vehicle/shop details..."
                   className="w-full bg-white/10 border border-white/20 rounded-2xl p-4 min-h-[120px] text-white placeholder:text-white/30 focus:outline-none focus:border-white transition-colors text-sm"
                 />
               </div>
@@ -221,7 +270,7 @@ export default function Branding() {
 
               <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
                 <p className="text-sm text-white/80 leading-relaxed italic">
-                  After you send the request, our design team will review your brief and contact you with the next step.
+                  After you send the request, our design team reviews the brief, confirms details, and follows up with the next step.
                 </p>
               </div>
 
@@ -230,7 +279,7 @@ export default function Branding() {
                 disabled={submitting}
                 className={`w-full bg-white text-brand-primary py-5 rounded-2xl font-bold text-xl flex items-center justify-center gap-3 transition-transform hover:scale-[1.02] ${submitting ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                {submitting ? 'Sending...' : 'Send project'} <Send size={20} />
+                {submitting ? 'Sending...' : 'Request design'} <Send size={20} />
               </button>
             </div>
           </motion.div>

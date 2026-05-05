@@ -1,5 +1,5 @@
 import { Fragment, useState, useEffect } from 'react';
-import { ShoppingBag, Star, Plus, MapPin, Package, Heart, Info, Minus, Check, Search, SlidersHorizontal, ShieldCheck, Store, Sparkles, ArrowRight, X } from 'lucide-react';
+import { Building2, Gift, MonitorSmartphone, Paintbrush, ShoppingBag, Star, Plus, MapPin, Package, Heart, Info, Minus, Check, Search, SlidersHorizontal, ShieldCheck, Store, Sparkles, ArrowRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -12,12 +12,16 @@ import {
   trackEvent,
   type DesignPreferences
 } from '../lib/behavior';
+import { defaultSiteContent, fetchSiteContent, type SiteContent } from '../lib/siteContent';
+
+const DEFAULT_MAX_PRICE = 100000;
+const categoryIcons = [Gift, Paintbrush, MonitorSmartphone, Building2];
 
 export default function Shop() {
   const [searchParams] = useSearchParams();
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState(searchParams.get('query') || '');
-  const [priceFilter, setPriceFilter] = useState('All');
+  const [priceRange, setPriceRange] = useState({ min: 0, max: DEFAULT_MAX_PRICE });
   const [sortMode, setSortMode] = useState('Recommended');
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
@@ -40,6 +44,7 @@ export default function Shop() {
     }
   });
   const [preferences, setPreferences] = useState<DesignPreferences>(() => getStoredPreferences());
+  const [content, setContent] = useState<SiteContent>(defaultSiteContent);
   
   // Cart state for the current item being added
   const [quantity, setQuantity] = useState(1);
@@ -48,9 +53,15 @@ export default function Shop() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const productSnap = await getDocs(collection(db, 'products'));
+        const [productSnap, siteContent] = await Promise.all([
+          getDocs(collection(db, 'products')),
+          fetchSiteContent()
+        ]);
         const productsData = productSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setProducts(productsData);
+        setContent(siteContent);
+        const highestPrice = Math.max(DEFAULT_MAX_PRICE, ...productsData.map((product: any) => Number(product.price || 0)));
+        setPriceRange({ min: 0, max: highestPrice });
 
         const categorySnap = await getDocs(collection(db, 'categories'));
         const categoriesData = ["All", ...categorySnap.docs.map(doc => doc.data().name)];
@@ -97,13 +108,18 @@ export default function Shop() {
     return 'Available';
   };
 
+  const getServiceTitle = (product: any) => {
+    const name = product.name || 'Custom project';
+    if (name.toLowerCase().startsWith('custom')) return `${name} — designed for you`;
+    return `Custom ${name} — designed for you`;
+  };
+
   const priceMatches = (product: any) => {
     const price = Number(product.price || 0);
-    if (priceFilter === 'Under 5000') return price < 5000;
-    if (priceFilter === '5000-20000') return price >= 5000 && price <= 20000;
-    if (priceFilter === 'Over 20000') return price > 20000;
-    return true;
+    return price >= priceRange.min && price <= priceRange.max;
   };
+
+  const catalogMaxPrice = Math.max(DEFAULT_MAX_PRICE, ...products.map(product => Number(product.price || 0)));
 
   const textMatches = (product: any) => {
     const q = searchQuery.trim().toLowerCase();
@@ -194,7 +210,7 @@ export default function Shop() {
   const handleToggleWishlist = async (e: React.MouseEvent, product: any) => {
     e.stopPropagation();
     if (!auth.currentUser) {
-      toast.error("Please sign in to save items");
+      toast.error("Please sign in to save ideas.");
       return;
     }
 
@@ -205,7 +221,7 @@ export default function Shop() {
         const wishSnap = await getDocs(query(collection(db, 'wishlist'), where('userId', '==', auth.currentUser.uid), where('productId', '==', product.id)));
         wishSnap.forEach(async (d) => await deleteDoc(doc(db, 'wishlist', d.id)));
         setWishlist(prev => prev.filter(id => id !== product.id));
-        toast.success("Removed from wishlist");
+        toast.success("Removed from saved ideas.");
       } else {
         await addDoc(collection(db, 'wishlist'), {
           userId: auth.currentUser.uid,
@@ -216,7 +232,7 @@ export default function Shop() {
           createdAt: serverTimestamp()
         });
         setWishlist(prev => [...prev, product.id]);
-        toast.success("Added to wishlist!");
+        toast.success("Saved for later.");
       }
       trackEvent({
         eventType: 'wishlist',
@@ -224,7 +240,7 @@ export default function Shop() {
         metadata: { action: isWishlisted ? 'remove' : 'add', category: product.category }
       }).catch(() => undefined);
     } catch (err) {
-      toast.error("Action failed");
+      toast.error("Something went wrong. Please try again.");
     }
   };
 
@@ -320,7 +336,7 @@ export default function Shop() {
         productId: product.id,
         metadata: { source: 'shop-request', category: product.category, price: product.price }
       }).catch(() => undefined);
-      toast.success("Added to your requests. Checkout from cart when you are ready to pay.");
+      toast.success("Added to your requests. We will confirm your design before processing.");
       setSelectedProduct(null);
     } catch (error) {
       console.error(error);
@@ -333,24 +349,48 @@ export default function Shop() {
       <div className="mb-6 flex flex-col gap-4 md:mb-8 md:flex-row md:items-end md:justify-between">
         <div className="max-w-3xl">
           <div className="mb-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">
-            <SlidersHorizontal size={14} /> Shop and compare
+            <SlidersHorizontal size={14} /> Explore
           </div>
-          <h1 className="mb-3 text-4xl leading-none md:mb-4 md:text-7xl">Find the <span className="italic font-light">best option</span></h1>
-          <p className="max-w-2xl text-stone-500">Filter by style, price, and category, then compare the pieces that fit your home or gift list.</p>
+          <h1 className="mb-3 text-4xl leading-none md:mb-4 md:text-7xl">{content.exploreTitle}</h1>
+          <p className="max-w-2xl text-stone-500">{content.exploreSubtitle}</p>
         </div>
         <Link to="/analyzer" className="inline-flex items-center gap-2 rounded-full border border-stone-200 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-stone-600 hover:border-brand-primary hover:text-brand-primary">
-          Personalize ideas <Sparkles size={14} />
+          Start customizing <Sparkles size={14} />
         </Link>
       </div>
 
+      <section className="mb-8 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {content.categories.map((intent, index) => {
+          const Icon = categoryIcons[index % categoryIcons.length];
+          return (
+            <button
+              key={intent.title}
+              onClick={() => {
+                setSearchQuery(intent.search);
+                setActiveCategory('All');
+              }}
+              className="group flex min-h-28 items-start gap-4 rounded-[24px] bg-white p-5 text-left shadow-sm transition-transform hover:-translate-y-1 hover:shadow-md"
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-primary/5 text-brand-primary group-hover:bg-brand-primary group-hover:text-brand-cream">
+                <Icon size={22} />
+              </span>
+              <span>
+                <span className="block font-bold text-stone-900">{intent.title}</span>
+                <span className="mt-1 block text-sm leading-relaxed text-stone-500">{intent.description}</span>
+              </span>
+            </button>
+          );
+        })}
+      </section>
+
       <div className="sticky top-16 z-40 mb-8 rounded-[24px] border border-stone-100 bg-brand-cream/95 p-2 backdrop-blur-xl shadow-sm md:top-20 md:mb-12 md:rounded-[28px] md:p-3">
-        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_auto_auto_auto] xl:items-center">
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_auto_minmax(220px,320px)_auto] xl:items-center">
           <div className="flex min-h-12 items-center gap-3 rounded-2xl bg-white px-4">
             <Search size={18} className="text-stone-400" />
             <input
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search products..."
+              placeholder="Search banners, portraits, stickers, mounts..."
               className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-stone-400"
             />
           </div>
@@ -367,16 +407,31 @@ export default function Shop() {
             ))}
           </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {['All', 'Under 5000', '5000-20000', 'Over 20000'].map(range => (
-              <button
-                key={range}
-                onClick={() => setPriceFilter(range)}
-                className={`min-h-12 whitespace-nowrap rounded-2xl px-4 text-[10px] font-black uppercase tracking-widest transition-all ${priceFilter === range ? 'bg-stone-900 text-white' : 'bg-white text-stone-500 hover:text-brand-primary'}`}
-              >
-                {range === 'All' ? 'Any price' : range}
-              </button>
-            ))}
+          <div className="rounded-2xl bg-white px-4 py-3">
+            <div className="mb-2 flex items-center justify-between gap-3 text-[10px] font-black uppercase tracking-widest text-stone-400">
+              <span>Starting price</span>
+              <span>KSH {priceRange.min} - {priceRange.max}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="range"
+                min="0"
+                max={catalogMaxPrice}
+                step="500"
+                value={priceRange.min}
+                onChange={(event) => setPriceRange(prev => ({ ...prev, min: Math.min(Number(event.target.value), prev.max) }))}
+                className="accent-brand-primary"
+              />
+              <input
+                type="range"
+                min="0"
+                max={catalogMaxPrice}
+                step="500"
+                value={priceRange.max}
+                onChange={(event) => setPriceRange(prev => ({ ...prev, max: Math.max(Number(event.target.value), prev.min) }))}
+                className="accent-brand-primary"
+              />
+            </div>
           </div>
 
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
@@ -392,8 +447,8 @@ export default function Shop() {
           </div>
         </div>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2 px-1 text-[9px] font-black uppercase tracking-widest text-stone-400 md:mt-3 md:text-[10px]">
-          <span>{filteredProducts.length} result{filteredProducts.length === 1 ? '' : 's'} in {activeCategory} · sorted by {sortMode}</span>
-          <span className="inline-flex items-center gap-2"><MapPin size={13} /> Nairobi availability shown on details</span>
+          <span>{filteredProducts.length} option{filteredProducts.length === 1 ? '' : 's'} in {activeCategory} · sorted by {sortMode}</span>
+          <span className="inline-flex items-center gap-2"><MapPin size={13} /> Custom work coordinated from Nairobi</span>
         </div>
       </div>
 
@@ -422,18 +477,18 @@ export default function Shop() {
         <div className="rounded-[36px] border border-stone-100 bg-white p-12 text-center">
           <Package size={42} className="mx-auto mb-4 text-stone-300" />
           <h2 className="text-2xl font-serif">Something went wrong.</h2>
-          <p className="mt-2 text-stone-400">Try again in a moment. Product discovery could not load.</p>
+          <p className="mt-2 text-stone-400">Something went wrong. Please try again.</p>
         </div>
       ) : filteredProducts.length === 0 ? (
         <div className="rounded-[36px] border border-stone-100 bg-white p-12 text-center">
           <Search size={42} className="mx-auto mb-4 text-stone-300" />
-          <h2 className="text-2xl font-serif">No matching products.</h2>
-          <p className="mt-2 text-stone-400">Adjust your search, category, or price range to see more options.</p>
+          <h2 className="text-2xl font-serif">Nothing here yet.</h2>
+          <p className="mt-2 text-stone-400">Nothing here yet — start by exploring designs.</p>
           <button
             onClick={() => {
               setSearchQuery('');
               setActiveCategory('All');
-              setPriceFilter('All');
+              setPriceRange({ min: 0, max: catalogMaxPrice });
             }}
             className="mt-6 rounded-full bg-brand-primary px-6 py-3 text-[10px] font-black uppercase tracking-widest text-brand-cream"
           >
@@ -470,7 +525,7 @@ export default function Shop() {
                     onClick={(e) => { e.stopPropagation(); handleProductClick(product); }}
                     className="opacity-0 group-hover:opacity-100 bg-white text-stone-900 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl transition-all duration-300"
                   >
-                    Quick View
+                  View service
                   </motion.button>
                 </div>
 
@@ -514,14 +569,14 @@ export default function Shop() {
               </div>
               <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-6">
                 <div className="bg-white/85 backdrop-blur-md p-3 rounded-2xl flex justify-between items-center shadow-sm md:p-4">
-                  <span className="font-bold text-base md:text-lg">KSH {product.price}</span>
+                  <span className="font-bold text-base md:text-lg">From KSH {product.price}</span>
                   <div className="flex items-center gap-1 text-xs font-bold text-brand-primary">
                     <Star size={14} fill="#5A5A40" /> {product.rating}
                   </div>
                 </div>
               </div>
             </div>
-            <h3 className="text-xl mb-1 md:text-2xl">{product.name}</h3>
+            <h3 className="text-xl mb-1 md:text-2xl">{getServiceTitle(product)}</h3>
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-stone-400 text-sm font-medium uppercase tracking-widest">{product.category}</p>
@@ -558,8 +613,8 @@ export default function Shop() {
               <div className="flex items-start justify-between gap-4 border-b border-stone-100 p-4 md:gap-6 md:p-6">
                 <div>
                   <div className="mb-2 text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">Compare options</div>
-                  <h2 className="text-2xl font-serif md:text-3xl">Choose with less guessing.</h2>
-                  <p className="mt-2 max-w-2xl text-sm text-stone-500">Side-by-side price, rating, availability, and fit cues from the selected products.</p>
+                  <h2 className="text-2xl font-serif md:text-3xl">Compare starting points.</h2>
+                  <p className="mt-2 max-w-2xl text-sm text-stone-500">Side-by-side starting price, rating, availability, and fit cues before you request a custom version.</p>
                 </div>
                 <button
                   onClick={() => setIsCompareOpen(false)}
@@ -619,7 +674,7 @@ export default function Shop() {
                     {[
                       ['Price', (product: any) => `KSH ${product.price}`],
                       ['Rating', (product: any) => `${product.rating || 'New'} / 5`],
-                      ['Category', (product: any) => product.category || 'Product'],
+                      ['Category', (product: any) => product.category || 'Service'],
                       ['Availability', (product: any) => getAvailability(product)],
                       ['Seller', (product: any) => getSellerName(product)],
                       ['Location', (product: any) => getProductLocation(product)],
@@ -653,7 +708,7 @@ export default function Shop() {
             <div className="flex flex-col gap-3 p-3 md:flex-row md:items-center md:justify-between md:p-4">
               <div>
                 <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Comparison set</div>
-                <div className="mt-1 text-sm font-bold">Compare ({comparedProducts.length}) product{comparedProducts.length === 1 ? '' : 's'} selected</div>
+                <div className="mt-1 text-sm font-bold">Compare ({comparedProducts.length}) service idea{comparedProducts.length === 1 ? '' : 's'} selected</div>
               </div>
               <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto scrollbar-hide md:justify-end md:gap-3">
                 {comparedProducts.map((product: any) => (
@@ -747,14 +802,14 @@ export default function Shop() {
                 </button>
 
                 <div className="flex items-center gap-2 text-brand-primary font-bold uppercase tracking-[0.2em] text-[10px] mb-4">
-                  <Package size={12} /> Product detail
+                  <Package size={12} /> Custom service
                 </div>
                 
-                <h2 className="mb-5 text-3xl font-serif leading-tight md:mb-6 md:text-5xl">{selectedProduct.name}</h2>
+                <h2 className="mb-5 text-3xl font-serif leading-tight md:mb-6 md:text-5xl">{getServiceTitle(selectedProduct)}</h2>
                 
                 <div className="mb-6 flex items-center gap-5 border-b border-stone-100 pb-6 md:mb-8 md:gap-6 md:pb-8">
                   <div>
-                    <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest block mb-1">Price</span>
+                    <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest block mb-1">Starts from</span>
                     <span className="text-2xl font-bold text-brand-primary font-mono md:text-3xl">
                       KSH {selectedProduct.variations?.find((v: any) => v.name === selectedColor)?.price || selectedProduct.price}
                     </span>
@@ -773,7 +828,7 @@ export default function Shop() {
                 <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3 md:mb-8">
                   <div className="rounded-2xl bg-white p-4 border border-stone-100">
                     <Store size={18} className="mb-3 text-brand-primary" />
-                    <span className="block text-[10px] font-black uppercase tracking-widest text-stone-400">Seller</span>
+                    <span className="block text-[10px] font-black uppercase tracking-widest text-stone-400">Studio</span>
                     <span className="mt-1 block text-sm font-bold text-stone-800">{getSellerName(selectedProduct)}</span>
                   </div>
                   <div className="rounded-2xl bg-white p-4 border border-stone-100">
@@ -783,7 +838,7 @@ export default function Shop() {
                   </div>
                   <div className="rounded-2xl bg-white p-4 border border-stone-100">
                     <ShieldCheck size={18} className="mb-3 text-brand-primary" />
-                    <span className="block text-[10px] font-black uppercase tracking-widest text-stone-400">Availability</span>
+                    <span className="block text-[10px] font-black uppercase tracking-widest text-stone-400">Production</span>
                     <span className="mt-1 block text-sm font-bold text-stone-800">{getAvailability(selectedProduct)}</span>
                   </div>
                 </div>
@@ -859,12 +914,12 @@ export default function Shop() {
                   </div>
                 )}
 
-                {/* Prominent Add to Cart for Modal */}
+                {/* Prominent order action for modal */}
                 <button 
                   onClick={() => handleAddToCart(selectedProduct)}
                   className="mb-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-brand-primary py-4 text-base font-bold text-brand-cream shadow-xl shadow-brand-primary/20 transition-transform hover:scale-[1.02] md:mb-8 md:py-5 md:text-lg"
                 >
-                  <ShoppingBag size={24} /> Add to Cart
+                  <ShoppingBag size={24} /> Start order
                 </button>
 
                 {/* Custom Options: Quantity & Address */}
@@ -889,11 +944,11 @@ export default function Shop() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-2">Delivery Address</label>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-2">Project and delivery notes</label>
                     <textarea 
                       value={deliveryAddress}
                       onChange={(e) => setDeliveryAddress(e.target.value)}
-                      placeholder="Enter full delivery details..."
+                      placeholder="Describe your idea, preferred colors, size, pickup/delivery notes..."
                       className="w-full bg-stone-50 border border-stone-100 rounded-2xl p-4 text-sm focus:outline-brand-primary min-h-[80px]"
                     />
                   </div>
@@ -963,17 +1018,17 @@ export default function Shop() {
                       onClick={() => handleAddToCart(selectedProduct)}
                       className="bg-stone-100 text-stone-900 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 hover:bg-stone-200 transition-colors"
                     >
-                      <Plus size={20} /> Add to cart
+                      <Plus size={20} /> Customize
                     </button>
                     <button 
                       onClick={() => handleOrder(selectedProduct)}
                       className="bg-brand-primary text-brand-cream py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shadow-lg shadow-brand-primary/20"
                     >
-                      <ShoppingBag size={20} /> Request order
+                      <ShoppingBag size={20} /> Request design
                     </button>
                   </div>
-                  <button className="w-full border border-stone-200 text-stone-600 py-4 rounded-2xl font-bold hover:bg-stone-50 transition-colors">
-                    Ask for a custom option
+                  <button onClick={() => handleOrder(selectedProduct)} className="w-full border border-stone-200 text-stone-600 py-4 rounded-2xl font-bold hover:bg-stone-50 transition-colors">
+                    Talk to a designer
                   </button>
                 </div>
               </div>

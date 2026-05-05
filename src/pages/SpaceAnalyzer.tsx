@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Camera, Upload, Sparkles, RefreshCw, ChevronRight, Share2, Crop, Check, X, Send, Play, Video, Plus, Trash2 } from 'lucide-react';
+import { Building2, Camera, Gift, MonitorSmartphone, Paintbrush, Upload, Sparkles, RefreshCw, ChevronRight, Share2, Crop, Check, X, Send, Play, Video, Plus, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { analyzeSpace } from '../services/geminiService';
@@ -9,6 +9,9 @@ import { auth, db, collection, addDoc, serverTimestamp, handleFirestoreError, Op
 import { toast } from 'react-hot-toast';
 import Tooltip from '../components/Tooltip';
 import { extractDesignPreferences, getProductInsightLabels, getProductPreferenceScore, getStoredPreferences, saveStoredPreferences, trackEvent } from '../lib/behavior';
+import { defaultSiteContent, fetchSiteContent, type SiteContent } from '../lib/siteContent';
+
+const categoryIcons = [Gift, Paintbrush, MonitorSmartphone, Building2];
 
 export default function SpaceAnalyzer() {
   const [mediaFiles, setMediaFiles] = useState<{ type: 'image' | 'video', data: string }[]>([]);
@@ -23,16 +26,25 @@ export default function SpaceAnalyzer() {
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [result, setResult] = useState<string | null>(null);
+  const [briefText, setBriefText] = useState("");
   const [refinementText, setRefinementText] = useState("");
   const [products, setProducts] = useState<any[]>([]);
+  const [content, setContent] = useState<SiteContent>(defaultSiteContent);
+  const [creationIntentIndex, setCreationIntentIndex] = useState(0);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    getDocs(collection(db, 'products'))
-      .then(snapshot => setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))))
+    Promise.all([
+      getDocs(collection(db, 'products')),
+      fetchSiteContent()
+    ])
+      .then(([snapshot, siteContent]) => {
+        setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        setContent(siteContent);
+      })
       .catch(() => undefined);
 
     return () => {
@@ -46,6 +58,8 @@ export default function SpaceAnalyzer() {
         .sort((a, b) => getProductPreferenceScore(b, getStoredPreferences()) - getProductPreferenceScore(a, getStoredPreferences()))
         .slice(0, 3)
     : [];
+
+  const creationIntent = content.categories[creationIntentIndex] || content.categories[0];
 
   const startCamera = async () => {
     try {
@@ -187,17 +201,17 @@ export default function SpaceAnalyzer() {
     }
   };
 
-  const [analysisStatus, setAnalysisStatus] = useState("Identifying boundaries...");
+  const [analysisStatus, setAnalysisStatus] = useState("Understanding your request...");
   
   const statusMessages = [
-    "Identifying space boundaries...",
-    "Analyzing lighting conditions...",
-    "Evaluating color palettes...",
-    "Detecting furniture patterns...",
-    "Matching with artisanal crafts...",
-    "Optimizing focal points...",
-    "Curating custom decor...",
-    "Finalizing maridadi touch..."
+    "Understanding your request...",
+    "Reading style references...",
+    "Evaluating colors and layout...",
+    "Matching print and branding options...",
+    "Finding suitable materials...",
+    "Preparing custom direction...",
+    "Choosing matching Maridadi services...",
+    "Finalizing recommendations..."
   ];
 
   const runAnalysis = async (refinement?: string) => {
@@ -224,15 +238,18 @@ export default function SpaceAnalyzer() {
       const isVideo = mediaFiles[0].type === 'video';
       const inputs = isVideo ? mediaFiles[0].data.split(',')[1] : mediaFiles.map(m => m.data.split(',')[1]);
       
-      const recommendations = await analyzeSpace(inputs, refinement, isVideo);
-      const preferences = extractDesignPreferences(recommendations, refinement);
+      const projectDetails = refinement ?? briefText;
+      const promptContext = `${creationIntent.title}: ${creationIntent.description}. ${projectDetails || ''}`.trim();
+      const recommendations = await analyzeSpace(inputs, promptContext, isVideo);
+      const preferences = extractDesignPreferences(recommendations, promptContext);
       saveStoredPreferences(preferences);
       trackEvent({
         eventType: 'analyzer',
         metadata: {
           mediaCount: mediaFiles.length,
           preferences,
-          refinement: Boolean(refinement)
+          refinement: Boolean(refinement),
+          creationIntent: creationIntent.title
         }
       }).catch(() => undefined);
       setAnalysisProgress(100);
@@ -249,7 +266,7 @@ export default function SpaceAnalyzer() {
           await addDoc(collection(db, 'designRequests'), {
             userId: auth.currentUser.uid,
             mediaCount: mediaFiles.length,
-            prompt: refinement || "Advanced Multimedia Space Analysis",
+            prompt: promptContext,
             recommendations,
             preferences,
             status: "completed",
@@ -274,7 +291,7 @@ export default function SpaceAnalyzer() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-3 py-8 sm:px-4 md:py-12">
+    <div className="max-w-6xl mx-auto px-3 py-8 sm:px-4 md:py-12">
       {/* Cropping Modal */}
       <AnimatePresence>
         {editingMediaIndex !== null && mediaFiles[editingMediaIndex] && (
@@ -328,18 +345,52 @@ export default function SpaceAnalyzer() {
       </AnimatePresence>
 
       <div className="text-center mb-8 md:mb-12">
-        <h1 className="mb-3 text-4xl italic font-light leading-none md:mb-4 md:text-6xl">Room <span className="font-serif not-italic">Style Finder</span></h1>
+        <h1 className="mb-3 text-4xl italic font-light leading-none md:mb-4 md:text-6xl">{content.customizeTitle}</h1>
         <p className="text-stone-500 text-sm max-w-2xl mx-auto leading-relaxed md:text-lg">
-          Tell us your style with a room photo so we can recommend better products and matching items.
+          {content.customizeSubtitle}
         </p>
       </div>
+
+      <section className="mb-8">
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">Guided start</p>
+            <h2 className="mt-2 text-2xl font-serif text-stone-900 md:text-3xl">What are you creating?</h2>
+          </div>
+          <Link to="/shop" className="hidden text-[10px] font-black uppercase tracking-widest text-brand-primary sm:inline-flex sm:items-center sm:gap-2">
+            Browse examples <ChevronRight size={14} />
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {content.categories.map((intent, index) => {
+            const Icon = categoryIcons[index % categoryIcons.length];
+            const selected = creationIntentIndex === index;
+            return (
+              <button
+                key={intent.title}
+                onClick={() => setCreationIntentIndex(index)}
+                className={`group min-h-32 rounded-[24px] p-5 text-left transition-all ${selected ? 'bg-brand-primary text-brand-cream shadow-xl shadow-brand-primary/20' : 'bg-white text-stone-900 shadow-sm hover:-translate-y-1 hover:shadow-md'}`}
+              >
+                <Icon size={22} className={selected ? 'text-brand-cream' : 'text-brand-primary'} />
+                <span className="mt-4 block font-bold">I want {intent.shortLabel.toLowerCase()}</span>
+                <span className={`mt-2 block text-sm leading-relaxed ${selected ? 'text-white/70' : 'text-stone-500'}`}>{intent.description}</span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
         {/* Media Intake Side */}
         <div className="space-y-6 md:space-y-8">
           <div className="bg-white rounded-[28px] border border-stone-100 p-4 shadow-sm md:rounded-[40px] md:p-8">
+            <div className="mb-5 md:mb-8">
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">Step 2</p>
+              <h2 className="mt-2 text-2xl font-serif text-stone-900">Tell us your style</h2>
+              <p className="mt-2 text-sm text-stone-400">Step 3: Add details or upload your idea.</p>
+            </div>
             <div className="flex gap-3 mb-5 md:gap-4 md:mb-8">
-              <Tooltip content="Upload Images/Video">
+              <Tooltip content="Upload your idea">
                 <button 
                   onClick={() => fileInputRef.current?.click()}
                   className="flex h-14 w-14 items-center justify-center rounded-2xl border border-stone-100 bg-stone-50 text-stone-500 transition-all hover:bg-brand-primary hover:text-white md:h-16 md:w-16"
@@ -367,6 +418,15 @@ export default function SpaceAnalyzer() {
               )}
             </div>
 
+            <div className="mb-5 md:mb-8">
+              <textarea
+                value={briefText}
+                onChange={(event) => setBriefText(event.target.value)}
+                placeholder="Describe the item, style, colors, size, wording, or business name..."
+                className="min-h-[112px] w-full rounded-[24px] border border-stone-100 bg-stone-50 p-5 text-sm outline-none focus:border-brand-primary focus:bg-white"
+              />
+            </div>
+
             <div className="aspect-[4/3] bg-stone-900 rounded-[24px] overflow-hidden relative group md:aspect-video md:rounded-[32px]">
               {isCameraActive ? (
                 <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
@@ -381,7 +441,7 @@ export default function SpaceAnalyzer() {
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-stone-500 gap-4">
                   <Video size={48} className="opacity-20" />
-                  <span className="text-sm font-medium tracking-widest uppercase opacity-40">Add a room photo or video</span>
+                  <span className="text-sm font-medium tracking-widest uppercase opacity-40">Add a reference photo or video</span>
                 </div>
               )}
               <canvas ref={canvasRef} className="hidden" />
@@ -470,7 +530,7 @@ export default function SpaceAnalyzer() {
               ) : (
                 <Sparkles size={24} />
               )}
-              {analyzing ? `Preparing your recommendations... ${Math.round(analysisProgress)}%` : 'Find ideas for my space'}
+              {analyzing ? `Preparing your options... ${Math.round(analysisProgress)}%` : 'Get design direction'}
             </div>
           </button>
 
@@ -495,8 +555,8 @@ export default function SpaceAnalyzer() {
                   <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-brand-primary" size={32} />
                 </div>
                 <div>
-                  <h3 className="text-2xl mb-2 font-serif">Reading your space...</h3>
-                  <p className="text-stone-400 italic">We are looking at layout, lighting, colors, and style opportunities.</p>
+                  <h3 className="text-2xl mb-2 font-serif">Reading your brief...</h3>
+                  <p className="text-stone-400 italic">We are looking at your reference, style, colors, and project type.</p>
                 </div>
               </motion.div>
             ) : result ? (
@@ -508,7 +568,7 @@ export default function SpaceAnalyzer() {
               >
                 <div className="flex justify-between items-center mb-8 pb-4 border-b border-stone-100">
                   <div className="flex items-center gap-2 text-brand-primary font-bold uppercase tracking-[0.2em] text-xs">
-                    <Sparkles size={14} /> Style recommendations
+                    <Sparkles size={14} /> Here's what we recommend for you
                   </div>
                   <div className="flex gap-2">
                     <button 
@@ -528,11 +588,11 @@ export default function SpaceAnalyzer() {
                   <div className="mt-8 border-t border-stone-100 pt-8 md:mt-12 md:pt-10">
                     <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div>
-                        <h4 className="text-xl font-serif text-stone-900">Matching products</h4>
-                        <p className="text-sm text-stone-400">Chosen from the style, color, and layout details in your room.</p>
+                        <h4 className="text-xl font-serif text-stone-900">Suggested services and custom options</h4>
+                        <p className="text-sm text-stone-400">Chosen from what you are creating, your style, and your details.</p>
                       </div>
                       <Link to="/shop" className="text-[10px] font-black uppercase tracking-widest text-brand-primary flex items-center gap-2">
-                        Compare all <ChevronRight size={14} />
+                        Explore options <ChevronRight size={14} />
                       </Link>
                     </div>
                     <div className="grid grid-cols-1 gap-3">
@@ -560,7 +620,7 @@ export default function SpaceAnalyzer() {
                       <RefreshCw size={20} />
                     </div>
                     <div>
-                      <h4 className="font-bold text-sm">Refine recommendations</h4>
+                      <h4 className="font-bold text-sm">Refine the direction</h4>
                       <p className="text-[10px] text-stone-400 uppercase tracking-widest">Tailor your results further</p>
                     </div>
                   </div>
@@ -569,7 +629,7 @@ export default function SpaceAnalyzer() {
                     <textarea 
                       value={refinementText}
                       onChange={(e) => setRefinementText(e.target.value)}
-                      placeholder="e.g., 'more minimalist', 'add blue accents'..."
+                      placeholder="e.g., 'make it premium', 'use blue and white', 'for a salon banner'..."
                       className="w-full bg-stone-50 border border-stone-100 rounded-[32px] p-6 pr-16 text-sm focus:outline-brand-primary min-h-[140px] shadow-inner transition-all focus:bg-white"
                     />
                     <button 
@@ -583,11 +643,20 @@ export default function SpaceAnalyzer() {
                 </div>
 
                 <div className="mt-12 bg-brand-primary/5 p-8 rounded-3xl border border-brand-primary/10">
-                  <h4 className="text-xl mb-4 font-serif text-brand-primary">Want help bringing it to life?</h4>
-                  <p className="text-stone-600 mb-6 text-sm">We can build custom furniture or create art pieces tailored to your space.</p>
-                  <div className="flex gap-3">
-                    <button className="bg-brand-primary text-brand-cream px-6 py-3 rounded-full text-sm font-bold flex items-center gap-2">
-                      Request a quote <ChevronRight size={16} />
+                  <h4 className="text-xl mb-4 font-serif text-brand-primary">Ready to make it?</h4>
+                  <p className="text-stone-600 mb-6 text-sm">Send the request and Maridadi can design, print, or brand the final piece for you.</p>
+                  <div className="flex flex-wrap gap-3">
+                    <Link to="/cart" className="bg-brand-primary text-brand-cream px-6 py-3 rounded-full text-sm font-bold flex items-center gap-2">
+                      Proceed with this design <ChevronRight size={16} />
+                    </Link>
+                    <Link to="/shop" className="bg-white text-stone-700 px-6 py-3 rounded-full text-sm font-bold border border-stone-200">
+                      Request custom design
+                    </Link>
+                    <button
+                      onClick={() => toast.success('Saved for later.')}
+                      className="bg-white text-stone-700 px-6 py-3 rounded-full text-sm font-bold border border-stone-200"
+                    >
+                      Save for later
                     </button>
                   </div>
                 </div>
@@ -595,7 +664,7 @@ export default function SpaceAnalyzer() {
             ) : (
               <div className="flex flex-col items-center justify-center flex-1 p-12 text-center text-stone-300">
                 <Sparkles size={64} className="mb-6 opacity-20" />
-                <p className="text-lg">Upload a photo to see <br />your recommendations here.</p>
+                <p className="text-lg">Choose a project type and upload a reference <br />to see your recommendations here.</p>
               </div>
             )}
           </AnimatePresence>

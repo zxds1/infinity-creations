@@ -1,14 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { auth, signInWithGoogle, db, collection, getDocs, query, limit } from '../lib/firebase';
-import { onAuthStateChanged, User, signOut } from 'firebase/auth';
-import { Camera, Home, ShoppingBag, Paintbrush, User as UserIcon, LogOut, Menu, X, Search, Sparkles, Heart } from 'lucide-react';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { Camera, ShoppingBag, Paintbrush, User as UserIcon, LogOut, Search, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Tooltip from './Tooltip';
 
 export default function Header() {
   const [user, setUser] = useState<User | null>(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{ products: any[], services: any[] }>({ products: [], services: [] });
@@ -64,10 +63,10 @@ export default function Header() {
   }, []);
 
   const navItems = [
-    { name: 'Discover', path: '/shop', icon: ShoppingBag },
-    { name: 'Design', path: '/analyzer', icon: Camera },
-    { name: 'Activity', path: '/orders', icon: UserIcon },
-    { name: 'Saved', path: '/wishlist', icon: Heart },
+    { name: 'Explore', path: '/shop', icon: ShoppingBag },
+    { name: 'Customize', path: '/analyzer', icon: Camera },
+    { name: 'For Business', path: '/branding', icon: Paintbrush },
+    { name: 'My Activity', path: '/orders', icon: UserIcon },
   ];
 
   return (
@@ -119,7 +118,7 @@ export default function Header() {
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search products & services..."
+                        placeholder="Search designs, prints, branding..."
                         className="w-full bg-white border border-stone-200 rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-brand-primary"
                       />
                     </div>
@@ -129,13 +128,13 @@ export default function Header() {
                     {searchQuery.length < 2 ? (
                       <div className="text-center py-8">
                         <Sparkles className="mx-auto text-brand-primary/20 mb-3" size={32} />
-                        <p className="text-stone-400 text-xs uppercase tracking-widest font-bold">Discover Maridadi</p>
+                        <p className="text-stone-400 text-xs uppercase tracking-widest font-bold">Design, print, brand</p>
                       </div>
                     ) : (
                       <>
                         {searchResults.products.length > 0 && (
                           <div>
-                            <h4 className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-3 px-2">Products</h4>
+                            <h4 className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-3 px-2">Custom ideas</h4>
                             {searchResults.products.map(p => (
                               <Link 
                                 key={p.id} 
@@ -146,7 +145,7 @@ export default function Header() {
                                 <img src={p.image} className="w-16 h-full object-cover rounded-lg" />
                                 <div className="flex flex-col">
                                   <span className="text-sm font-bold text-stone-800">{p.name}</span>
-                                  <span className="text-xs text-brand-primary font-bold">KSH {p.price}</span>
+                                  <span className="text-xs text-brand-primary font-bold">From KSH {p.price}</span>
                                 </div>
                               </Link>
                             ))}
@@ -180,7 +179,7 @@ export default function Header() {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            <Tooltip content="Order History">
+            <Tooltip content="My Activity">
               <Link to="/orders" className="hidden p-3 text-stone-400 hover:text-brand-primary hover:bg-stone-50 rounded-full transition-all sm:block">
                 <UserIcon size={18} />
               </Link>

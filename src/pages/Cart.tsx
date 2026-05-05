@@ -218,7 +218,7 @@ export default function Cart() {
       toast.success("Order created. Complete payment with the details shown.");
     } catch (error) {
       trackEvent({ eventType: 'payment_failed', metadata: { reason: error instanceof Error ? error.message : 'checkout-failed' } }).catch(() => undefined);
-      toast.error("Checkout failed. Please review your cart.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setProcessingCheckout(false);
     }
@@ -230,9 +230,9 @@ export default function Cart() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-16 text-center md:py-24">
         <ShoppingBag size={64} className="text-stone-200 mx-auto mb-6" />
-        <h1 className="text-4xl mb-6">Sign in to view your cart</h1>
+        <h1 className="text-4xl mb-6">Sign in to view your order</h1>
         <Link to="/" className="bg-brand-primary text-brand-cream px-8 py-4 rounded-2xl font-bold uppercase tracking-widest text-xs">
-          Start Exploring
+          Explore designs
         </Link>
       </div>
     );
@@ -241,8 +241,8 @@ export default function Cart() {
   return (
     <div className="max-w-6xl mx-auto px-3 py-8 sm:px-4 md:py-16">
       <div className="mb-8 md:mb-12">
-        <h1 className="mb-3 text-4xl italic font-light leading-none md:mb-4 md:text-7xl">Secure <span className="font-serif not-italic">Checkout</span></h1>
-        <p className="text-stone-500">Review your items, confirm delivery details, then choose how you want to pay.</p>
+        <h1 className="mb-3 text-4xl italic font-light leading-none md:mb-4 md:text-7xl">Your <span className="font-serif not-italic">Order</span></h1>
+        <p className="text-stone-500">Review your custom service requests, confirm delivery details, then choose how you want to pay.</p>
       </div>
 
       {loading ? (
@@ -254,10 +254,10 @@ export default function Cart() {
           <div className="w-20 h-20 rounded-full bg-stone-50 flex items-center justify-center mx-auto mb-6 text-stone-300">
             <ShoppingBag size={40} />
           </div>
-          <h3 className="text-2xl mb-2 font-serif">Your cart is empty</h3>
-          <p className="text-stone-400 mb-8">Add pieces you love, then come back here when you are ready to checkout.</p>
+          <h3 className="text-2xl mb-2 font-serif">Nothing here yet</h3>
+          <p className="text-stone-400 mb-8">Start by exploring designs and add what you want to create.</p>
           <Link to="/shop" className="text-brand-primary font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:gap-4 transition-all">
-            Browse products <ArrowRight size={16} />
+            Explore designs <ArrowRight size={16} />
           </Link>
         </div>
       ) : (
@@ -332,8 +332,8 @@ export default function Cart() {
               {checkoutStep === 'delivery' && (
                 <motion.div key="delivery" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="bg-white rounded-[28px] p-5 border border-brand-primary/5 space-y-6 md:rounded-[32px] md:p-8 md:space-y-8">
                   <div>
-                    <h2 className="text-2xl font-serif mb-2 md:text-3xl">Delivery and contact</h2>
-                    <p className="text-sm text-stone-400">Maridadi uses this for payment confirmation, delivery coordination, and support.</p>
+                    <h2 className="text-2xl font-serif mb-2 md:text-3xl">Your Details</h2>
+                    <p className="text-sm text-stone-400">Where should we deliver?</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -381,7 +381,7 @@ export default function Cart() {
                     <div className="rounded-2xl bg-stone-50 p-5 md:col-span-3">
                       <ShieldCheck size={20} className="text-brand-primary mb-3" />
                       <h3 className="font-bold text-sm">Secure checkout</h3>
-                      <p className="text-xs text-stone-400 mt-1">Your item prices, delivery fee, and total are confirmed before payment.</p>
+                      <p className="text-xs text-stone-400 mt-1">Secure checkout. We will confirm your order before processing.</p>
                     </div>
                   </div>
 
@@ -394,15 +394,15 @@ export default function Cart() {
               {checkoutStep === 'payment' && (
                 <motion.div key="payment" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="bg-white rounded-[28px] p-5 border border-brand-primary/5 space-y-6 md:rounded-[32px] md:p-8 md:space-y-8">
                   <div>
-                    <h2 className="text-2xl font-serif mb-2 md:text-3xl">Payment</h2>
-                    <p className="text-sm text-stone-400">We confirm your cart total before creating your order.</p>
+                    <h2 className="text-2xl font-serif mb-2 md:text-3xl">Complete your order</h2>
+                    <p className="text-sm text-stone-400">Choose your preferred payment method.</p>
                   </div>
 
                   <div className="rounded-3xl border border-stone-100 bg-stone-50 p-6">
                     <div className="mb-5 flex items-center justify-between gap-4">
                       <div>
-                        <h3 className="font-bold text-stone-900">Before payment</h3>
-                        <p className="text-xs text-stone-400 mt-1">Review the amount, fulfiller, and delivery expectation.</p>
+                        <h3 className="font-bold text-stone-900">Order Summary</h3>
+                        <p className="text-xs text-stone-400 mt-1">Review your items and total cost.</p>
                       </div>
                       <ShieldCheck size={22} className="text-brand-primary" />
                     </div>
@@ -458,9 +458,9 @@ export default function Cart() {
                       <div className="flex items-start gap-4">
                         <ShieldCheck size={28} className="text-brand-primary shrink-0" />
                         <div>
-                          <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary mb-1">Order ready for payment</p>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary mb-1">Your order is confirmed</p>
                           <h3 className="font-bold text-lg">{checkoutResult.paymentInstructions.title}</h3>
-                          <p className="text-sm text-stone-600 mt-2">{checkoutResult.paymentInstructions.message}</p>
+                          <p className="text-sm text-stone-600 mt-2">We have received your request. Our team will begin working on your design and contact you if needed.</p>
                           <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                             <div className="rounded-2xl bg-white p-4">
                               <span className="block text-[10px] font-black uppercase tracking-widest text-stone-400">Order ID</span>
@@ -480,7 +480,7 @@ export default function Cart() {
                             </div>
                           </div>
                           <div className="mt-5 rounded-2xl bg-white p-4">
-                            <p className="text-sm font-bold text-stone-900">What happens next</p>
+                            <p className="text-sm font-bold text-stone-900">Next steps</p>
                             <p className="mt-1 text-xs leading-relaxed text-stone-500">
                               After payment is confirmed, your order moves to processing. You can track every update from Activity.
                             </p>
@@ -499,7 +499,7 @@ export default function Cart() {
                     className="w-full bg-brand-primary text-brand-cream py-5 rounded-2xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:scale-[1.01] transition-transform disabled:opacity-60"
                   >
                     <CreditCard size={18} />
-                    {processingCheckout ? 'Creating your order...' : 'Create order and start payment'}
+                    {processingCheckout ? 'Creating your order...' : 'Confirm and pay'}
                   </button>
                 </motion.div>
               )}
@@ -561,7 +561,7 @@ export default function Cart() {
             </div>
 
             <div className="bg-brand-primary text-brand-cream rounded-[28px] p-5 shadow-2xl lg:sticky lg:top-8 md:rounded-[40px] md:p-8">
-              <h2 className="text-2xl font-serif mb-6 italic md:mb-8 md:text-3xl">Checkout Summary</h2>
+              <h2 className="text-2xl font-serif mb-6 italic md:mb-8 md:text-3xl">Order Summary</h2>
               
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between text-white/60 text-sm">
@@ -583,7 +583,7 @@ export default function Cart() {
                 disabled={processingCheckout}
                 className="w-full bg-white text-brand-primary py-5 rounded-2xl font-bold uppercase tracking-widest text-sm flex items-center justify-center gap-3 hover:scale-[1.02] transition-transform shadow-xl"
               >
-                <CreditCard size={20} /> {checkoutStep === 'payment' ? 'Start Payment' : 'Continue'}
+                <CreditCard size={20} /> {checkoutStep === 'payment' ? 'Confirm and pay' : 'Proceed to checkout'}
               </button>
               
               <p className="text-[10px] text-white/40 mt-6 text-center italic">

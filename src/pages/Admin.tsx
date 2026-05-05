@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
-import { db, auth, collection, getDocs, getDocFromServer, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from '../lib/firebase';
-import { Package, ShoppingBag, Paintbrush, Plus, Trash2, Edit3, Settings, CheckCircle2, Truck, XCircle, Clock, Sparkles, TrendingUp, Users, DollarSign, RefreshCw, Bike, Zap, Home, Camera, Heart, Star } from 'lucide-react';
+import { db, auth, collection, getDocs, getDocFromServer, addDoc, updateDoc, deleteDoc, doc, query, orderBy, setDoc } from '../lib/firebase';
+import { Package, ShoppingBag, Paintbrush, Plus, Trash2, Edit3, Settings, CheckCircle2, Truck, XCircle, Clock, Sparkles, TrendingUp, Users, DollarSign, RefreshCw, Bike, Zap, Home, Camera, Heart, Star, Type } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import { generateAdminInsights } from '../services/geminiService';
 import ReactMarkdown from 'react-markdown';
 import { onAuthStateChanged } from 'firebase/auth';
+import { defaultSiteContent, mergeSiteContent, type SiteContent } from '../lib/siteContent';
 
 export default function Admin() {
-  const [activeTab, setActiveTab] = useState<'orders' | 'catalog' | 'services' | 'categories' | 'insights'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'catalog' | 'services' | 'categories' | 'content' | 'insights'>('orders');
   const [orders, setOrders] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
@@ -18,6 +19,8 @@ export default function Admin() {
   const [generatingInsights, setGeneratingInsights] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [siteContent, setSiteContent] = useState<SiteContent>(defaultSiteContent);
+  const [savingContent, setSavingContent] = useState(false);
 
   // Form states
   const [newProduct, setNewProduct] = useState({ 
@@ -94,6 +97,9 @@ export default function Admin() {
 
         const categorySnap = await getDocs(query(collection(db, 'categories'), orderBy('order', 'asc')));
         setCategories(categorySnap.docs.map(d => ({ id: d.id, ...d.data() })));
+
+        const contentSnap = await getDocFromServer(doc(db, 'siteContent', 'main'));
+        setSiteContent(mergeSiteContent(contentSnap.exists() ? contentSnap.data() as Partial<SiteContent> : null));
       } catch (err) {
         toast.error("Failed to fetch admin data");
       } finally {
@@ -210,6 +216,27 @@ export default function Admin() {
     }
   };
 
+  const updateSiteCategory = (index: number, key: keyof SiteContent['categories'][number], value: string) => {
+    setSiteContent(prev => ({
+      ...prev,
+      categories: prev.categories.map((category, categoryIndex) =>
+        categoryIndex === index ? { ...category, [key]: value } : category
+      )
+    }));
+  };
+
+  const saveSiteContent = async () => {
+    setSavingContent(true);
+    try {
+      await setDoc(doc(db, 'siteContent', 'main'), siteContent);
+      toast.success("Site content updated");
+    } catch {
+      toast.error("Failed to save site content");
+    } finally {
+      setSavingContent(false);
+    }
+  };
+
   if (!authChecked) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
@@ -294,7 +321,8 @@ export default function Admin() {
             { id: 'orders', icon: Clock, label: 'Orders' },
             { id: 'catalog', icon: ShoppingBag, label: 'Catalog' },
             { id: 'services', icon: Paintbrush, label: 'Services' },
-            { id: 'categories', icon: Settings, label: 'Shop' },
+            { id: 'categories', icon: Settings, label: 'Categories' },
+            { id: 'content', icon: Type, label: 'Content' },
             { id: 'insights', icon: Sparkles, label: 'Insights' }
           ].map(tab => (
             <button
@@ -652,7 +680,7 @@ export default function Admin() {
         {activeTab === 'categories' && (
           <motion.div key="categories" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-8">
             <div className="bg-white p-8 rounded-3xl border border-stone-100 shadow-sm transition-all duration-500">
-              <h3 className="text-xl font-serif mb-6">{editingCategoryId ? 'Edit Category' : 'Add Shop Category'}</h3>
+              <h3 className="text-xl font-serif mb-6">{editingCategoryId ? 'Edit Category' : 'Add Explore Category'}</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <input type="text" placeholder="Category Name" className="p-4 rounded-xl border border-stone-100 focus:outline-brand-primary" value={newCategory.name} onChange={e => setNewCategory({...newCategory, name: e.target.value, slug: e.target.value.toLowerCase().replace(/\s+/g, '-')})} />
                 <input type="number" placeholder="Order" className="p-4 rounded-xl border border-stone-100 focus:outline-brand-primary" value={newCategory.order} onChange={e => setNewCategory({...newCategory, order: Number(e.target.value)})} />
@@ -704,6 +732,75 @@ export default function Admin() {
                    </div>
                 </div>
               ))}
+            </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'content' && (
+          <motion.div key="content" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-8">
+            <div className="rounded-[32px] border border-stone-100 bg-white p-6 shadow-sm md:p-8">
+              <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h3 className="text-2xl font-serif">Site Content</h3>
+                  <p className="mt-2 max-w-2xl text-sm text-stone-500">Edit the main customer-facing text and entry categories used on Home, Explore, Customize, and For Business.</p>
+                </div>
+                <button
+                  onClick={saveSiteContent}
+                  disabled={savingContent}
+                  className="rounded-2xl bg-brand-primary px-6 py-4 text-xs font-black uppercase tracking-widest text-brand-cream disabled:opacity-60"
+                >
+                  {savingContent ? 'Saving...' : 'Save content'}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                {[
+                  ['homeHeroTitle', 'Homepage title'],
+                  ['homeHeroSubtitle', 'Homepage subtitle'],
+                  ['coreHeadline', 'Core message'],
+                  ['coreSubtext', 'Core message subtext'],
+                  ['featuredTitle', 'Featured work title'],
+                  ['featuredSubtitle', 'Featured work subtitle'],
+                  ['howItWorksTitle', 'How it works title'],
+                  ['exploreTitle', 'Explore title'],
+                  ['exploreSubtitle', 'Explore subtitle'],
+                  ['customizeTitle', 'Customize title'],
+                  ['customizeSubtitle', 'Customize subtitle'],
+                  ['businessTitle', 'Business title'],
+                  ['businessSubtitle', 'Business subtitle']
+                ].map(([key, label]) => (
+                  <label key={key} className="block">
+                    <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-stone-400">{label}</span>
+                    <textarea
+                      value={String(siteContent[key as keyof SiteContent] || '')}
+                      onChange={(event) => setSiteContent(prev => ({ ...prev, [key]: event.target.value }))}
+                      className="min-h-20 w-full rounded-2xl border border-stone-100 bg-stone-50 p-4 text-sm outline-none focus:border-brand-primary"
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-stone-100 bg-white p-6 shadow-sm md:p-8">
+              <div className="mb-8">
+                <h3 className="text-2xl font-serif">Entry Categories</h3>
+                <p className="mt-2 text-sm text-stone-500">These categories power the quick entry options on Home, Explore, and Customize.</p>
+              </div>
+              <div className="space-y-6">
+                {siteContent.categories.map((category, index) => (
+                  <div key={`${category.title}-${index}`} className="rounded-3xl bg-stone-50 p-5">
+                    <div className="mb-4 text-[10px] font-black uppercase tracking-widest text-brand-primary">Category {index + 1}</div>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <input value={category.title} onChange={(event) => updateSiteCategory(index, 'title', event.target.value)} placeholder="Category title" className="rounded-2xl border border-stone-100 bg-white p-4 text-sm outline-none focus:border-brand-primary" />
+                      <input value={category.shortLabel} onChange={(event) => updateSiteCategory(index, 'shortLabel', event.target.value)} placeholder="Short label" className="rounded-2xl border border-stone-100 bg-white p-4 text-sm outline-none focus:border-brand-primary" />
+                      <textarea value={category.description} onChange={(event) => updateSiteCategory(index, 'description', event.target.value)} placeholder="Long description" className="min-h-24 rounded-2xl border border-stone-100 bg-white p-4 text-sm outline-none focus:border-brand-primary" />
+                      <textarea value={category.shortDescription} onChange={(event) => updateSiteCategory(index, 'shortDescription', event.target.value)} placeholder="Short description" className="min-h-24 rounded-2xl border border-stone-100 bg-white p-4 text-sm outline-none focus:border-brand-primary" />
+                      <input value={category.search} onChange={(event) => updateSiteCategory(index, 'search', event.target.value)} placeholder="Search terms" className="rounded-2xl border border-stone-100 bg-white p-4 text-sm outline-none focus:border-brand-primary md:col-span-2" />
+                      <input value={category.image} onChange={(event) => updateSiteCategory(index, 'image', event.target.value)} placeholder="Image URL" className="rounded-2xl border border-stone-100 bg-white p-4 text-sm outline-none focus:border-brand-primary md:col-span-2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </motion.div>
         )}

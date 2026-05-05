@@ -58,9 +58,9 @@ export default function Wishlist() {
       if (item) {
         trackEvent({ eventType: 'wishlist', productId: item.productId, metadata: { action: 'remove-from-core' } }).catch(() => undefined);
       }
-      toast.success("Removed from wishlist");
+      toast.success("Removed from saved ideas.");
     } catch (err) {
-      toast.error("Failed to remove");
+      toast.error("Something went wrong. Please try again.");
     }
   };
 
@@ -81,9 +81,9 @@ export default function Wishlist() {
       });
       trackEvent({ eventType: 'cart', productId: item.productId, metadata: { source: 'wishlist' } }).catch(() => undefined);
       await deleteDoc(doc(db, 'wishlist', item.id));
-      toast.success("Moved to cart!");
+      toast.success("Added to your order.");
     } catch (err) {
-      toast.error("Failed to move to cart");
+      toast.error("Something went wrong. Please try again.");
     }
   };
 
@@ -96,10 +96,10 @@ export default function Wishlist() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-16 text-center md:py-24">
         <Heart size={64} className="text-stone-200 mx-auto mb-6" />
-        <h1 className="text-4xl mb-6">Sign in to view your wishlist</h1>
-        <p className="text-stone-500 mb-8">Save your favorite pieces and come back to them later.</p>
+        <h1 className="text-4xl mb-6">Sign in to view saved ideas</h1>
+        <p className="text-stone-500 mb-8">Keep track of designs and items you are interested in.</p>
         <Link to="/" className="bg-brand-primary text-brand-cream px-8 py-4 rounded-2xl font-bold uppercase tracking-widest text-xs">
-          Explore Collection
+          Explore designs
         </Link>
       </div>
     );
@@ -108,8 +108,8 @@ export default function Wishlist() {
   return (
     <div className="max-w-6xl mx-auto px-3 py-8 sm:px-4 md:py-16">
       <div className="mb-8 md:mb-12">
-        <h1 className="mb-3 text-4xl italic font-light leading-none md:mb-4 md:text-7xl">Saved <span className="font-serif not-italic">Favorites</span></h1>
-        <p className="text-stone-500">Your saved pieces, similar options, and availability updates in one place.</p>
+        <h1 className="mb-3 text-4xl italic font-light leading-none md:mb-4 md:text-7xl">Saved <span className="font-serif not-italic">Ideas</span></h1>
+        <p className="text-stone-500">Keep track of designs and items you are interested in.</p>
       </div>
 
       {loading ? (
@@ -121,10 +121,10 @@ export default function Wishlist() {
           <div className="w-20 h-20 rounded-full bg-stone-50 flex items-center justify-center mx-auto mb-6 text-stone-300">
             <Heart size={40} />
           </div>
-          <h3 className="text-2xl mb-2 font-serif">No saved favorites yet</h3>
-          <p className="text-stone-400 mb-8">Save products you like so you can compare them later.</p>
+          <h3 className="text-2xl mb-2 font-serif">You haven't saved anything yet</h3>
+          <p className="text-stone-400 mb-8">Start exploring and save what you like.</p>
           <Link to="/shop" className="text-brand-primary font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:gap-4 transition-all">
-            Browse Shop <ArrowRight size={16} />
+            Explore designs <ArrowRight size={16} />
           </Link>
         </div>
       ) : (
@@ -170,7 +170,7 @@ export default function Wishlist() {
                           <span className="mt-1 block text-xs font-bold text-stone-700">{product && Number(product.price) !== Number(item.price) ? 'Price changed' : 'Stable price'}</span>
                         </div>
                         <div className="rounded-2xl bg-stone-50 p-3">
-                          <span className="block text-[8px] font-black uppercase tracking-widest text-stone-400">Similar items</span>
+                          <span className="block text-[8px] font-black uppercase tracking-widest text-stone-400">Similar ideas</span>
                           <span className="mt-1 block text-xs font-bold text-stone-700">{recommendedProducts.length} suggested</span>
                         </div>
                       </div>
@@ -178,7 +178,7 @@ export default function Wishlist() {
                         onClick={() => moveToCart(item)}
                         className="w-full bg-stone-900 text-white py-4 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-brand-primary transition-colors"
                       >
-                        <ShoppingBag size={16} /> Move to cart
+                        <ShoppingBag size={16} /> Start order
                       </button>
                     </div>
                   </motion.div>
@@ -191,8 +191,8 @@ export default function Wishlist() {
             <section className="border-t border-brand-primary/10 pt-10">
               <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="text-3xl font-serif">Similar items</h2>
-                  <p className="text-sm text-stone-400">Recommendations improve as you compare and save more products.</p>
+                  <h2 className="text-3xl font-serif">Similar ideas</h2>
+                  <p className="text-sm text-stone-400">Recommendations improve as you compare and save more designs.</p>
                 </div>
                 <Link to="/shop" className="text-[10px] font-black uppercase tracking-widest text-brand-primary flex items-center gap-2">
                   Compare more <ArrowRight size={14} />
