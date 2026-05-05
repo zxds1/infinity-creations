@@ -168,6 +168,33 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /siteContent/{contentId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /testimonialSubmissions/{submissionId} {
+      allow create: if isValidTestimonialSubmission(request.resource.data);
+      allow get, list: if isAdmin();
+      allow update, delete: if isAdmin();
+
+      function isValidTestimonialSubmission(submission) {
+        return submission.clientName is string
+          && submission.clientName.size() >= 1
+          && submission.clientName.size() <= 120
+          && submission.quote is string
+          && submission.quote.size() >= 1
+          && submission.quote.size() <= 1200
+          && (!('project' in submission) || (submission.project is string && submission.project.size() <= 160))
+          && (!('beforeImage' in submission) || (submission.beforeImage is string && submission.beforeImage.size() <= 10000))
+          && (!('afterImage' in submission) || (submission.afterImage is string && submission.afterImage.size() <= 10000))
+          && submission.status == 'pending'
+          && submission.userId is string
+          && submission.userId.size() <= 128
+          && submission.createdAt == request.time;
+      }
+    }
+
     // Configurable Catalog & Services
     match /products/{productId} {
       allow read: if true;

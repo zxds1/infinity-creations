@@ -2,7 +2,7 @@ import { Fragment, useState, useEffect } from 'react';
 import { ShoppingBag, Star, Plus, MapPin, Package, Info, Minus, Check, Search, SlidersHorizontal, ShieldCheck, Store, Sparkles, ArrowRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { db, auth, collection, getDocs, addDoc, serverTimestamp, query, where, orderBy, deleteDoc, doc } from '../lib/firebase';
 import {
   assertProductExists,
@@ -23,6 +23,7 @@ export default function Shop() {
   const [searchQuery, setSearchQuery] = useState(searchParams.get('query') || '');
   const [priceRange, setPriceRange] = useState({ min: 0, max: DEFAULT_MAX_PRICE });
   const [sortMode, setSortMode] = useState('Recommended');
+  const [viewMode, setViewMode] = useState<'inspiration' | 'browse'>('inspiration');
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [products, setProducts] = useState<any[]>([]);
@@ -45,6 +46,7 @@ export default function Shop() {
   });
   const [preferences, setPreferences] = useState<DesignPreferences>(() => getStoredPreferences());
   const [content, setContent] = useState<SiteContent>(defaultSiteContent);
+  const navigate = useNavigate();
   
   // Cart state for the current item being added
   const [quantity, setQuantity] = useState(1);
@@ -115,6 +117,27 @@ export default function Shop() {
     const name = product.name || 'Custom project';
     if (name.toLowerCase().startsWith('custom')) return `${name} — designed for you`;
     return `Custom ${name} — designed for you`;
+  };
+
+  const prefersStructuredCategory = (category: string) => /business|banner|vehicle|branding/i.test(category);
+
+  const getCustomizeUrl = (product: any) => {
+    const params = new URLSearchParams({
+      product: product.name || 'Custom project',
+      category: product.category || 'Custom',
+      price: String(product.price || ''),
+      idea: product.description || product.name || ''
+    });
+    return `/analyzer?${params.toString()}`;
+  };
+
+  const handleCustomizeProduct = (product: any) => {
+    trackEvent({
+      eventType: 'analyzer',
+      productId: product.id,
+      metadata: { source: 'explore-customize', category: product.category }
+    }).catch(() => undefined);
+    navigate(getCustomizeUrl(product));
   };
 
   const priceMatches = (product: any) => {
@@ -396,13 +419,24 @@ export default function Shop() {
           <h1 className="mb-3 text-4xl leading-none md:mb-4 md:text-7xl">{content.exploreTitle}</h1>
           <p className="max-w-2xl text-stone-500">{content.exploreSubtitle}</p>
         </div>
-        <Link to="/analyzer" className="inline-flex items-center gap-2 rounded-full border border-stone-200 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-stone-600 hover:border-brand-primary hover:text-brand-primary">
-          Start customizing <Sparkles size={14} />
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          {(['inspiration', 'browse'] as const).map(mode => (
+            <button
+              key={mode}
+              onClick={() => setViewMode(mode)}
+              className={`inline-flex min-h-11 items-center gap-2 rounded-full px-5 text-[10px] font-black uppercase tracking-widest transition-colors ${viewMode === mode ? 'bg-stone-900 text-white' : 'border border-stone-200 text-stone-600 hover:border-brand-primary hover:text-brand-primary'}`}
+            >
+              {mode === 'inspiration' ? 'Inspiration' : 'Browse'}
+            </button>
+          ))}
+          <Link to="/analyzer" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-stone-200 px-5 text-[10px] font-black uppercase tracking-widest text-stone-600 hover:border-brand-primary hover:text-brand-primary">
+            Start customizing <Sparkles size={14} />
+          </Link>
+        </div>
       </div>
 
       <div className="sticky top-16 z-40 mb-8 rounded-[24px] border border-stone-100 bg-brand-cream/95 p-2 backdrop-blur-xl shadow-sm md:top-20 md:mb-12 md:rounded-[28px] md:p-3">
-        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_auto_minmax(220px,320px)_auto] xl:items-center">
+        <div className={`grid grid-cols-1 gap-3 xl:items-center ${viewMode === 'browse' ? 'xl:grid-cols-[1fr_auto_minmax(220px,320px)_auto]' : 'xl:grid-cols-[1fr_auto_auto]'}`}>
           <div className="flex min-h-12 items-center gap-3 rounded-2xl bg-white px-4">
             <Search size={18} className="text-stone-400" />
             <input
@@ -417,7 +451,10 @@ export default function Shop() {
             {categories.map(cat => (
               <button
                 key={cat}
-                onClick={() => setActiveCategory(cat)}
+                onClick={() => {
+                  setActiveCategory(cat);
+                  if (prefersStructuredCategory(cat)) setViewMode('browse');
+                }}
                 className={`min-h-12 whitespace-nowrap rounded-2xl px-4 text-[10px] font-black uppercase tracking-widest transition-all ${activeCategory === cat ? 'bg-brand-primary text-brand-cream shadow-lg shadow-brand-primary/20' : 'bg-white text-stone-500 hover:text-brand-primary'}`}
               >
                 {cat}
@@ -425,47 +462,55 @@ export default function Shop() {
             ))}
           </div>
 
-          <div className="rounded-2xl bg-white px-4 py-3">
-            <div className="mb-2 flex items-center justify-between gap-3 text-[10px] font-black uppercase tracking-widest text-stone-400">
-              <span>Starting price</span>
-              <span>KSH {priceRange.min} - {priceRange.max}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                type="range"
-                min="0"
-                max={catalogMaxPrice}
-                step="500"
-                value={priceRange.min}
-                onChange={(event) => setPriceRange(prev => ({ ...prev, min: Math.min(Number(event.target.value), prev.max) }))}
-                className="accent-brand-primary"
-              />
-              <input
-                type="range"
-                min="0"
-                max={catalogMaxPrice}
-                step="500"
-                value={priceRange.max}
-                onChange={(event) => setPriceRange(prev => ({ ...prev, max: Math.max(Number(event.target.value), prev.min) }))}
-                className="accent-brand-primary"
-              />
-            </div>
-          </div>
+          {viewMode === 'browse' ? (
+            <>
+              <div className="rounded-2xl bg-white px-4 py-3">
+                <div className="mb-2 flex items-center justify-between gap-3 text-[10px] font-black uppercase tracking-widest text-stone-400">
+                  <span>Starting price</span>
+                  <span>KSH {priceRange.min} - {priceRange.max}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="range"
+                    min="0"
+                    max={catalogMaxPrice}
+                    step="500"
+                    value={priceRange.min}
+                    onChange={(event) => setPriceRange(prev => ({ ...prev, min: Math.min(Number(event.target.value), prev.max) }))}
+                    className="accent-brand-primary"
+                  />
+                  <input
+                    type="range"
+                    min="0"
+                    max={catalogMaxPrice}
+                    step="500"
+                    value={priceRange.max}
+                    onChange={(event) => setPriceRange(prev => ({ ...prev, max: Math.max(Number(event.target.value), prev.min) }))}
+                    className="accent-brand-primary"
+                  />
+                </div>
+              </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {['Recommended', 'Popular', 'Price low', 'Price high'].map(mode => (
-              <button
-                key={mode}
-                onClick={() => setSortMode(mode)}
-                className={`min-h-12 whitespace-nowrap rounded-2xl px-4 text-[10px] font-black uppercase tracking-widest transition-all ${sortMode === mode ? 'bg-white text-brand-primary shadow-sm' : 'bg-white/60 text-stone-500 hover:text-brand-primary'}`}
-              >
-                {mode}
-              </button>
-            ))}
-          </div>
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                {['Recommended', 'Popular', 'Price low', 'Price high'].map(mode => (
+                  <button
+                    key={mode}
+                    onClick={() => setSortMode(mode)}
+                    className={`min-h-12 whitespace-nowrap rounded-2xl px-4 text-[10px] font-black uppercase tracking-widest transition-all ${sortMode === mode ? 'bg-white text-brand-primary shadow-sm' : 'bg-white/60 text-stone-500 hover:text-brand-primary'}`}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="flex min-h-12 items-center rounded-2xl bg-white/60 px-4 text-[10px] font-black uppercase tracking-widest text-stone-500">
+              Visual discovery first. Tap View to decide.
+            </div>
+          )}
         </div>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2 px-1 text-[9px] font-black uppercase tracking-widest text-stone-400 md:mt-3 md:text-[10px]">
-          <span>{filteredProducts.length} option{filteredProducts.length === 1 ? '' : 's'} in {activeCategory} · sorted by {sortMode}</span>
+          <span>{filteredProducts.length} option{filteredProducts.length === 1 ? '' : 's'} in {activeCategory} · {viewMode === 'browse' ? `sorted by ${sortMode}` : 'inspiration mode'}</span>
           <span className="inline-flex items-center gap-2"><MapPin size={13} /> Custom work coordinated from Nairobi</span>
         </div>
       </div>
@@ -513,6 +558,65 @@ export default function Shop() {
             Reset filters
           </button>
         </div>
+      ) : viewMode === 'inspiration' ? (
+        <div className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4">
+          {filteredProducts.map((product, idx) => (
+            <motion.div
+              key={product.id}
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: Math.min(idx * 0.04, 0.35) }}
+              className="group mb-4 break-inside-avoid overflow-hidden rounded-[28px] bg-white shadow-sm"
+            >
+              <button
+                onClick={() => handleProductClick(product)}
+                className="block w-full text-left"
+              >
+                <div className={`relative overflow-hidden bg-stone-100 ${idx % 5 === 0 ? 'aspect-[3/4]' : idx % 3 === 0 ? 'aspect-[4/5]' : idx % 2 === 0 ? 'aspect-square' : 'aspect-[4/3]'}`}>
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-stone-950/75 via-stone-950/10 to-transparent p-4 opacity-100">
+                    <span className="inline-flex rounded-full bg-white/90 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-stone-700">
+                      {getProductInsightLabels(product, preferences, idx)[0] || 'Popular'}
+                    </span>
+                  </div>
+                </div>
+              </button>
+              <div className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="truncate text-base font-bold text-stone-900">{product.name}</h3>
+                    <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-stone-400">{product.category || 'Custom'}</p>
+                  </div>
+                  <button
+                    onClick={(event) => handleToggleWishlist(event, product)}
+                    className={`shrink-0 rounded-full px-3 py-2 text-[9px] font-black uppercase tracking-widest ${wishlist.includes(product.id) ? 'bg-brand-primary text-brand-cream' : 'bg-stone-50 text-stone-500 hover:text-brand-primary'}`}
+                  >
+                    {wishlist.includes(product.id) ? 'Saved' : 'Save'}
+                  </button>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => handleProductClick(product)}
+                    className="min-h-10 rounded-2xl bg-stone-900 px-4 text-[10px] font-black uppercase tracking-widest text-white"
+                  >
+                    View
+                  </button>
+                  <button
+                    onClick={() => handleCustomizeProduct(product)}
+                    className="min-h-10 rounded-2xl bg-brand-primary px-4 text-[10px] font-black uppercase tracking-widest text-brand-cream"
+                  >
+                    Customize
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
           {filteredProducts.map((product, idx) => (
@@ -547,7 +651,7 @@ export default function Shop() {
                 </div>
                 <div className="mt-5 grid grid-cols-2 gap-2">
                   <button
-                    onClick={(e) => { e.stopPropagation(); handleProductClick(product); }}
+                    onClick={(e) => { e.stopPropagation(); handleCustomizeProduct(product); }}
                     className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-brand-primary px-4 text-[10px] font-black uppercase tracking-widest text-brand-cream"
                   >
                     Customize
@@ -984,10 +1088,10 @@ export default function Shop() {
                 <div className="mt-auto space-y-4">
                   <div className="grid grid-cols-2 gap-3">
                     <button 
-                      onClick={() => handleAddToCart(selectedProduct)}
+                      onClick={() => handleCustomizeProduct(selectedProduct)}
                       className="bg-stone-100 text-stone-900 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 hover:bg-stone-200 transition-colors"
                     >
-                      <Plus size={20} /> Customize
+                      <Sparkles size={20} /> AI customize
                     </button>
                     <button 
                       onClick={() => handleOrder(selectedProduct)}

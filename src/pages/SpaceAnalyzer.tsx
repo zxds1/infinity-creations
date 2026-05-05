@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Camera, Paintbrush, Upload, Sparkles, RefreshCw, ChevronRight, Share2, Crop, Check, X, Send, Play, Video, Plus, Trash2, Truck, Bike, Home, Package, Heart, ShoppingBag, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { analyzeSpace } from '../services/geminiService';
 import ReactMarkdown from 'react-markdown';
 import Cropper from 'react-easy-crop';
@@ -26,6 +26,7 @@ const serviceIconMap: Record<string, typeof Paintbrush> = {
 const getServiceIcon = (icon?: string) => serviceIconMap[icon || ''] || Paintbrush;
 
 export default function SpaceAnalyzer() {
+  const [searchParams] = useSearchParams();
   const [mediaFiles, setMediaFiles] = useState<{ type: 'image' | 'video', data: string }[]>([]);
   const [image, setImage] = useState<string | null>(null);
   const [croppedImage, setCroppedImage] = useState<string | null>(null);
@@ -42,11 +43,12 @@ export default function SpaceAnalyzer() {
   const [refinementText, setRefinementText] = useState("");
   const [products, setProducts] = useState<any[]>([]);
   const [content, setContent] = useState<SiteContent>(defaultSiteContent);
-  const [selectedServiceId, setSelectedServiceId] = useState(defaultSiteContent.services[0]?.id || '');
+  const [selectedServiceId, setSelectedServiceId] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const prefilledBriefRef = useRef(false);
 
   useEffect(() => {
     Promise.all([
@@ -56,7 +58,18 @@ export default function SpaceAnalyzer() {
       .then(([snapshot, siteContent]) => {
         setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         setContent(siteContent);
-        setSelectedServiceId(current => current || siteContent.services[0]?.id || '');
+        setSelectedServiceId(current => {
+          if (current) return current;
+          const requestedService = searchParams.get('service') || '';
+          const requestedCategory = searchParams.get('category') || '';
+          const matched = siteContent.services.find(service =>
+            service.id === requestedService ||
+            service.title.toLowerCase() === requestedService.toLowerCase() ||
+            service.category.toLowerCase() === requestedCategory.toLowerCase() ||
+            (requestedCategory && service.search.toLowerCase().includes(requestedCategory.toLowerCase()))
+          );
+          return matched?.id || siteContent.services[0]?.id || '';
+        });
       })
       .catch(() => undefined);
 
@@ -64,6 +77,25 @@ export default function SpaceAnalyzer() {
       stopCamera();
     };
   }, []);
+
+  useEffect(() => {
+    if (prefilledBriefRef.current) return;
+    const product = searchParams.get('product');
+    const category = searchParams.get('category');
+    const idea = searchParams.get('idea');
+    const price = searchParams.get('price');
+    if (!product && !idea) return;
+
+    const lines = [
+      product ? `I want to customize: ${product}.` : '',
+      category ? `Category: ${category}.` : '',
+      price ? `Starting price seen in Explore: KSH ${price}.` : '',
+      idea ? `Style or order notes: ${idea}.` : '',
+      'Recommend options I can choose from before ordering.'
+    ].filter(Boolean);
+    setBriefText(lines.join('\n'));
+    prefilledBriefRef.current = true;
+  }, [searchParams]);
 
   const matchedProducts = result
     ? products
@@ -230,7 +262,7 @@ export default function SpaceAnalyzer() {
   ];
 
   const runAnalysis = async (refinement?: string) => {
-    if (mediaFiles.length === 0) return;
+    if (mediaFiles.length === 0 && !briefText.trim() && !refinement?.trim()) return;
 
     setAnalyzing(true);
     setAnalysisProgress(0);
@@ -250,8 +282,10 @@ export default function SpaceAnalyzer() {
     }, 500);
 
     try {
-      const isVideo = mediaFiles[0].type === 'video';
-      const inputs = isVideo ? mediaFiles[0].data.split(',')[1] : mediaFiles.map(m => m.data.split(',')[1]);
+      const isVideo = mediaFiles[0]?.type === 'video';
+      const inputs = mediaFiles.length === 0
+        ? []
+        : isVideo ? mediaFiles[0].data.split(',')[1] : mediaFiles.map(m => m.data.split(',')[1]);
       
       const projectDetails = refinement ?? briefText;
       const serviceContext = selectedService
@@ -434,7 +468,7 @@ export default function SpaceAnalyzer() {
             <div className="mb-5 md:mb-8">
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">Step 2</p>
               <h2 className="mt-2 text-2xl font-serif text-stone-900">Tell us your style</h2>
-              <p className="mt-2 text-sm text-stone-400">Step 3: Add details or upload your idea.</p>
+              <p className="mt-2 text-sm text-stone-400">Step 3: Add details, upload your idea, or use the Explore item already loaded here.</p>
             </div>
             <div className="flex gap-3 mb-5 md:gap-4 md:mb-8">
               <Tooltip content="Upload your idea">
@@ -488,7 +522,7 @@ export default function SpaceAnalyzer() {
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-stone-500 gap-4">
                   <Video size={48} className="opacity-20" />
-                  <span className="text-sm font-medium tracking-widest uppercase opacity-40">Add a reference photo or video</span>
+                  <span className="max-w-xs text-center text-sm font-medium uppercase tracking-widest opacity-40">Add a reference photo or run from your brief</span>
                 </div>
               )}
               <canvas ref={canvasRef} className="hidden" />
@@ -561,7 +595,7 @@ export default function SpaceAnalyzer() {
 
           <button
             onClick={() => runAnalysis()}
-            disabled={mediaFiles.length === 0 || analyzing}
+            disabled={(mediaFiles.length === 0 && !briefText.trim()) || analyzing}
             className={`w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-3 transition-all relative overflow-hidden md:py-5 md:text-lg ${analyzing ? 'bg-stone-100 text-stone-400 cursor-not-allowed border border-stone-200' : 'bg-brand-primary text-brand-cream hover:shadow-2xl hover:shadow-brand-primary/20 shadow-lg active:scale-[0.98]'}`}
           >
             {analyzing && (

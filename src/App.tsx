@@ -8,6 +8,7 @@ import Header from './components/Header';
 import ScrollToTop from './components/ScrollToTop';
 import SocialIcon from './components/SocialIcon';
 import PWAInstallBanner from './components/PWAInstallBanner';
+import LogoMark from './components/LogoMark';
 import Home from './pages/Home';
 import SpaceAnalyzer from './pages/SpaceAnalyzer';
 import Shop from './pages/Shop';
@@ -123,7 +124,7 @@ export default function App() {
             <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 gap-10 md:grid-cols-4 md:gap-12">
               <div className="col-span-1 md:col-span-2">
                 <div className="flex items-center gap-2 mb-6">
-                  <div className="w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center text-brand-cream font-serif text-xl italic">M</div>
+                  <LogoMark className="h-8 w-8 rounded-full" />
                   <span className="font-serif text-xl font-semibold tracking-tight text-brand-primary">Maridadi Creations</span>
                 </div>
                 <p className="text-stone-400 max-w-sm leading-relaxed mb-8">
@@ -163,9 +164,9 @@ export default function App() {
               <div>
                 <h4 className="font-bold uppercase tracking-widest text-xs text-stone-900 mb-6">Contact</h4>
                 <ul className="space-y-4 text-stone-500 text-sm">
-                  <li>Nairobi, Kenya</li>
-                  <li>hello@maridadicreations.com</li>
-                  <li>+254 700 000 000</li>
+                  <li>{siteContent.contact.location}</li>
+                  <li><a href={`mailto:${siteContent.contact.email}`} className="hover:text-brand-primary">{siteContent.contact.email}</a></li>
+                  <li><a href={`tel:${siteContent.contact.phone.replace(/\s+/g, '')}`} className="hover:text-brand-primary">{siteContent.contact.phone}</a></li>
                   {footerSocialLinks[0] && (
                     <li><a href={footerSocialLinks[0].href} target="_blank" rel="noreferrer" className="font-bold text-brand-primary hover:text-stone-900">Message us @Maridadi Creations</a></li>
                   )}

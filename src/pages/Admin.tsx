@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { db, collection, getDocs, getDocFromServer, addDoc, updateDoc, deleteDoc, doc, query, orderBy, setDoc } from '../lib/firebase';
-import { Package, ShoppingBag, Paintbrush, Plus, Trash2, Edit3, Settings, CheckCircle2, Truck, Clock, Sparkles, Users, DollarSign, RefreshCw, Bike, Zap, Home, Camera, Heart, Star, Type, Image as ImageIcon } from 'lucide-react';
+import { Package, ShoppingBag, Paintbrush, Plus, Trash2, Edit3, Settings, CheckCircle2, Truck, Clock, Sparkles, Users, DollarSign, RefreshCw, Bike, Zap, Home, Camera, Heart, Star, Type, Image as ImageIcon, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import { generateAdminInsights } from '../services/geminiService';
 import ReactMarkdown from 'react-markdown';
-import { defaultSiteContent, mergeSiteContent, type ServiceOffering, type SiteContent } from '../lib/siteContent';
+import { defaultSiteContent, mergeSiteContent, type ServiceOffering, type SiteContent, type TestimonialContent } from '../lib/siteContent';
 import SocialIcon from '../components/SocialIcon';
 import { defaultSocialLinks, type SocialLink, type SocialLinkId } from '../lib/socialLinks';
 
@@ -21,6 +21,16 @@ const emptyServiceForm = {
   order: 0
 };
 
+const emptyTestimonialForm: TestimonialContent = {
+  id: '',
+  clientName: '',
+  project: '',
+  quote: '',
+  beforeImage: '',
+  afterImage: '',
+  order: 0
+};
+
 export default function Admin() {
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'catalog' | 'services' | 'categories' | 'content' | 'insights'>('overview');
   const [orders, setOrders] = useState<any[]>([]);
@@ -30,6 +40,7 @@ export default function Admin() {
   const [generatingInsights, setGeneratingInsights] = useState(false);
   const [siteContent, setSiteContent] = useState<SiteContent>(defaultSiteContent);
   const [savingContent, setSavingContent] = useState(false);
+  const [testimonialSubmissions, setTestimonialSubmissions] = useState<any[]>([]);
 
   // Form states
   const [newProduct, setNewProduct] = useState({ 
@@ -49,6 +60,8 @@ export default function Admin() {
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editingTestimonialId, setEditingTestimonialId] = useState<string | null>(null);
+  const [newTestimonial, setNewTestimonial] = useState<TestimonialContent>(emptyTestimonialForm);
   
   const generateInsights = async () => {
     if (orders.length === 0 && products.length === 0) {
@@ -82,6 +95,9 @@ export default function Admin() {
 
         const contentSnap = await getDocFromServer(doc(db, 'siteContent', 'main'));
         setSiteContent(mergeSiteContent(contentSnap.exists() ? contentSnap.data() as Partial<SiteContent> : null));
+
+        const testimonialSnap = await getDocs(query(collection(db, 'testimonialSubmissions'), orderBy('createdAt', 'desc')));
+        setTestimonialSubmissions(testimonialSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       } catch (err) {
         toast.error("Failed to fetch admin data");
       }
@@ -101,7 +117,7 @@ export default function Admin() {
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, target: 'product' | 'variation' | 'service' | 'hero' | 'category', categoryIndex?: number) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, target: 'product' | 'variation' | 'service' | 'hero' | 'category' | 'testimonialBefore' | 'testimonialAfter', categoryIndex?: number) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -118,6 +134,10 @@ export default function Admin() {
         setSiteContent(prev => ({ ...prev, homeHeroImage: base64 }));
       } else if (target === 'category' && typeof categoryIndex === 'number') {
         updateSiteCategory(categoryIndex, 'image', base64);
+      } else if (target === 'testimonialBefore') {
+        setNewTestimonial(prev => ({ ...prev, beforeImage: base64 }));
+      } else if (target === 'testimonialAfter') {
+        setNewTestimonial(prev => ({ ...prev, afterImage: base64 }));
       }
       toast.success("Image uploaded successfully");
     };
@@ -334,6 +354,68 @@ export default function Admin() {
       ...prev,
       socialLinks: prev.socialLinks.filter((_, linkIndex) => linkIndex !== index)
     }));
+  };
+
+  const updateContactContent = (key: keyof SiteContent['contact'], value: string) => {
+    setSiteContent(prev => ({
+      ...prev,
+      contact: {
+        ...prev.contact,
+        [key]: value
+      }
+    }));
+  };
+
+  const saveTestimonial = () => {
+    if (!newTestimonial.clientName.trim() || !newTestimonial.quote.trim()) {
+      toast.error("Client name and quote required");
+      return;
+    }
+
+    const testimonialToSave: TestimonialContent = {
+      ...newTestimonial,
+      id: editingTestimonialId || newTestimonial.id || newTestimonial.clientName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `testimonial-${Date.now()}`,
+      clientName: newTestimonial.clientName.trim(),
+      project: newTestimonial.project.trim(),
+      quote: newTestimonial.quote.trim(),
+      order: Number(newTestimonial.order || siteContent.testimonials.length + 1)
+    };
+
+    setSiteContent(prev => ({
+      ...prev,
+      testimonials: editingTestimonialId
+        ? prev.testimonials.map(testimonial => testimonial.id === editingTestimonialId ? testimonialToSave : testimonial).sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
+        : [...prev.testimonials, testimonialToSave].sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
+    }));
+    setEditingTestimonialId(null);
+    setNewTestimonial({ ...emptyTestimonialForm, order: siteContent.testimonials.length + 1 });
+    toast.success(editingTestimonialId ? "Testimonial updated. Save content to publish." : "Testimonial added. Save content to publish.");
+  };
+
+  const removeTestimonial = (testimonialId: string) => {
+    setSiteContent(prev => ({
+      ...prev,
+      testimonials: prev.testimonials.filter(testimonial => testimonial.id !== testimonialId)
+    }));
+    if (editingTestimonialId === testimonialId) {
+      setEditingTestimonialId(null);
+      setNewTestimonial({ ...emptyTestimonialForm, order: siteContent.testimonials.length });
+    }
+    toast.success("Testimonial removed. Save content to publish.");
+  };
+
+  const approveTestimonialSubmission = (submission: any) => {
+    setNewTestimonial({
+      id: '',
+      clientName: submission.clientName || '',
+      project: submission.project || '',
+      quote: submission.quote || '',
+      beforeImage: submission.beforeImage || '',
+      afterImage: submission.afterImage || '',
+      order: siteContent.testimonials.length + 1
+    });
+    setEditingTestimonialId(null);
+    toast.success("Submission loaded. Review it, add images if needed, then publish.");
   };
 
   const saveSiteContent = async () => {
@@ -1062,6 +1144,155 @@ export default function Admin() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            <div className="rounded-[32px] border border-stone-100 bg-white p-6 shadow-sm md:p-8">
+              <div className="mb-8">
+                <h3 className="text-2xl font-serif">Contact Section</h3>
+                <p className="mt-2 text-sm text-stone-500">These details appear in the footer and customer contact calls to action.</p>
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {[
+                  ['heading', 'Contact heading'],
+                  ['subtext', 'Contact subtext'],
+                  ['location', 'Location'],
+                  ['email', 'Email'],
+                  ['phone', 'Phone'],
+                  ['ctaLabel', 'Button label'],
+                  ['ctaHref', 'Button URL or mailto link']
+                ].map(([key, label]) => (
+                  <label key={key} className={key === 'subtext' ? 'md:col-span-2' : ''}>
+                    <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-stone-400">{label}</span>
+                    {key === 'subtext' ? (
+                      <textarea
+                        value={siteContent.contact[key as keyof SiteContent['contact']]}
+                        onChange={(event) => updateContactContent(key as keyof SiteContent['contact'], event.target.value)}
+                        className="min-h-24 w-full rounded-2xl border border-stone-100 bg-stone-50 p-4 text-sm outline-none focus:border-brand-primary"
+                      />
+                    ) : (
+                      <input
+                        value={siteContent.contact[key as keyof SiteContent['contact']]}
+                        onChange={(event) => updateContactContent(key as keyof SiteContent['contact'], event.target.value)}
+                        className="min-h-12 w-full rounded-2xl border border-stone-100 bg-stone-50 px-4 text-sm outline-none focus:border-brand-primary"
+                      />
+                    )}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-stone-100 bg-white p-6 shadow-sm md:p-8">
+              <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h3 className="text-2xl font-serif">Testimonials</h3>
+                  <p className="mt-2 text-sm text-stone-500">Configure the before and after testimonials shown on Home.</p>
+                </div>
+                <span className="inline-flex items-center gap-2 rounded-full bg-stone-50 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-brand-primary">
+                  <MessageCircle size={14} />
+                  {siteContent.testimonials.length} live
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <label>
+                  <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-stone-400">Section title</span>
+                  <input
+                    value={siteContent.testimonialsTitle}
+                    onChange={(event) => setSiteContent(prev => ({ ...prev, testimonialsTitle: event.target.value }))}
+                    className="min-h-12 w-full rounded-2xl border border-stone-100 bg-stone-50 px-4 text-sm outline-none focus:border-brand-primary"
+                  />
+                </label>
+                <label>
+                  <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-stone-400">Section subtitle</span>
+                  <textarea
+                    value={siteContent.testimonialsSubtitle}
+                    onChange={(event) => setSiteContent(prev => ({ ...prev, testimonialsSubtitle: event.target.value }))}
+                    className="min-h-12 w-full rounded-2xl border border-stone-100 bg-stone-50 p-4 text-sm outline-none focus:border-brand-primary"
+                  />
+                </label>
+              </div>
+
+              <div className="mt-8 rounded-3xl bg-stone-50 p-5">
+                <div className="mb-4 text-[10px] font-black uppercase tracking-widest text-brand-primary">{editingTestimonialId ? 'Edit testimonial' : 'Add testimonial'}</div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <input value={newTestimonial.clientName} onChange={(event) => setNewTestimonial(prev => ({ ...prev, clientName: event.target.value }))} placeholder="Client name" className="rounded-2xl border border-stone-100 bg-white p-4 text-sm outline-none focus:border-brand-primary" />
+                  <input value={newTestimonial.project} onChange={(event) => setNewTestimonial(prev => ({ ...prev, project: event.target.value }))} placeholder="Project" className="rounded-2xl border border-stone-100 bg-white p-4 text-sm outline-none focus:border-brand-primary" />
+                  <textarea value={newTestimonial.quote} onChange={(event) => setNewTestimonial(prev => ({ ...prev, quote: event.target.value }))} placeholder="Client quote" className="min-h-24 rounded-2xl border border-stone-100 bg-white p-4 text-sm outline-none focus:border-brand-primary md:col-span-2" />
+                  <input value={newTestimonial.beforeImage} onChange={(event) => setNewTestimonial(prev => ({ ...prev, beforeImage: event.target.value }))} placeholder="Before image URL" className="rounded-2xl border border-stone-100 bg-white p-4 text-sm outline-none focus:border-brand-primary" />
+                  <input value={newTestimonial.afterImage} onChange={(event) => setNewTestimonial(prev => ({ ...prev, afterImage: event.target.value }))} placeholder="After image URL" className="rounded-2xl border border-stone-100 bg-white p-4 text-sm outline-none focus:border-brand-primary" />
+                  <div className="flex flex-col gap-2 rounded-2xl border border-stone-100 bg-white p-4">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Upload before image</span>
+                    <input type="file" className="text-[10px] text-stone-400" accept="image/*" onChange={event => handleFileUpload(event, 'testimonialBefore')} />
+                  </div>
+                  <div className="flex flex-col gap-2 rounded-2xl border border-stone-100 bg-white p-4">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Upload after image</span>
+                    <input type="file" className="text-[10px] text-stone-400" accept="image/*" onChange={event => handleFileUpload(event, 'testimonialAfter')} />
+                  </div>
+                  <input type="number" value={newTestimonial.order} onChange={(event) => setNewTestimonial(prev => ({ ...prev, order: Number(event.target.value) }))} placeholder="Display order" className="rounded-2xl border border-stone-100 bg-white p-4 text-sm outline-none focus:border-brand-primary" />
+                  <div className="flex gap-3">
+                    <button onClick={saveTestimonial} className="flex-1 rounded-2xl bg-brand-primary px-5 py-4 text-[10px] font-black uppercase tracking-widest text-brand-cream">
+                      {editingTestimonialId ? 'Update' : 'Add'}
+                    </button>
+                    {editingTestimonialId && (
+                      <button onClick={() => { setEditingTestimonialId(null); setNewTestimonial({ ...emptyTestimonialForm, order: siteContent.testimonials.length + 1 }); }} className="rounded-2xl border border-stone-200 px-5 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500">
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-2">
+                {siteContent.testimonials.map(testimonial => (
+                  <div key={testimonial.id} className="rounded-3xl border border-stone-100 bg-stone-50 p-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      {[['Before', testimonial.beforeImage], ['After', testimonial.afterImage]].map(([label, image]) => (
+                        <div key={label} className="overflow-hidden rounded-2xl bg-white">
+                          {image ? <img src={image} alt={`${label} ${testimonial.project}`} className="aspect-video w-full object-cover" referrerPolicy="no-referrer" /> : <div className="flex aspect-video items-center justify-center text-stone-300"><ImageIcon size={24} /></div>}
+                          <div className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-stone-400">{label}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <h4 className="mt-4 font-bold text-stone-900">{testimonial.clientName}</h4>
+                    <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-brand-primary">{testimonial.project}</p>
+                    <p className="mt-3 line-clamp-3 text-sm text-stone-500">"{testimonial.quote}"</p>
+                    <div className="mt-4 flex gap-2">
+                      <button
+                        onClick={() => {
+                          setEditingTestimonialId(testimonial.id);
+                          setNewTestimonial(testimonial);
+                        }}
+                        className="flex-1 rounded-2xl bg-white py-3 text-stone-400 hover:text-brand-primary"
+                      >
+                        <Edit3 size={18} className="mx-auto" />
+                      </button>
+                      <button onClick={() => removeTestimonial(testimonial.id)} className="flex-1 rounded-2xl bg-red-50 py-3 text-red-400 hover:bg-red-100">
+                        <Trash2 size={18} className="mx-auto" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {testimonialSubmissions.length > 0 && (
+                <div className="mt-10 border-t border-stone-100 pt-8">
+                  <h4 className="text-sm font-black uppercase tracking-widest text-stone-400">Submitted testimonials</h4>
+                  <div className="mt-4 space-y-3">
+                    {testimonialSubmissions.slice(0, 6).map(submission => (
+                      <div key={submission.id} className="flex flex-col gap-4 rounded-3xl bg-stone-50 p-4 md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <p className="font-bold text-stone-900">{submission.clientName || 'Unnamed client'}</p>
+                          <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-brand-primary">{submission.project || 'No project set'}</p>
+                          <p className="mt-2 line-clamp-2 text-sm text-stone-500">{submission.quote}</p>
+                        </div>
+                        <button onClick={() => approveTestimonialSubmission(submission)} className="shrink-0 rounded-2xl bg-stone-900 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-white">
+                          Use this
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="rounded-[32px] border border-stone-100 bg-white p-6 shadow-sm md:p-8">

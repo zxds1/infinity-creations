@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowRight, Building2, Camera, CheckCircle2, Gift, MonitorSmartphone, Paintbrush, Search, Sparkles, Truck } from 'lucide-react';
+import { ArrowRight, Building2, Camera, CheckCircle2, Gift, Image as ImageIcon, MessageCircle, MonitorSmartphone, Paintbrush, Search, Send, Sparkles, Truck } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { db, collection, getDocs, query, orderBy, limit } from '../lib/firebase';
+import { auth, db, collection, getDocs, query, orderBy, limit, addDoc, serverTimestamp } from '../lib/firebase';
 import { getProductInsightLabels, getStoredPreferences } from '../lib/behavior';
 import { defaultSiteContent, fetchSiteContent, type SiteContent } from '../lib/siteContent';
+import { toast } from 'react-hot-toast';
 
 const categoryIcons = [Gift, Paintbrush, MonitorSmartphone, Building2];
 
@@ -14,6 +15,10 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [content, setContent] = useState<SiteContent>(defaultSiteContent);
+  const [activeTestimonialIndex, setActiveTestimonialIndex] = useState(0);
+  const [testimonialView, setTestimonialView] = useState<'before' | 'after'>('after');
+  const [testimonialForm, setTestimonialForm] = useState({ clientName: '', project: '', quote: '', beforeImage: '', afterImage: '' });
+  const [submittingTestimonial, setSubmittingTestimonial] = useState(false);
   const navigate = useNavigate();
   const preferences = useMemo(() => getStoredPreferences(), []);
 
@@ -39,6 +44,36 @@ export default function Home() {
     event?.preventDefault();
     const query = searchTerm.trim();
     navigate(query ? `/shop?query=${encodeURIComponent(query)}` : '/shop');
+  };
+
+  const visibleTestimonials = content.testimonials.filter(testimonial => testimonial.quote.trim());
+  const activeTestimonial = visibleTestimonials[activeTestimonialIndex % Math.max(visibleTestimonials.length, 1)];
+
+  const submitTestimonial = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!testimonialForm.clientName.trim() || !testimonialForm.quote.trim()) {
+      toast.error('Name and testimonial are required');
+      return;
+    }
+
+    setSubmittingTestimonial(true);
+    try {
+      await addDoc(collection(db, 'testimonialSubmissions'), {
+        ...testimonialForm,
+        clientName: testimonialForm.clientName.trim(),
+        project: testimonialForm.project.trim(),
+        quote: testimonialForm.quote.trim(),
+        status: 'pending',
+        userId: auth.currentUser?.uid || 'guest',
+        createdAt: serverTimestamp()
+      });
+      setTestimonialForm({ clientName: '', project: '', quote: '', beforeImage: '', afterImage: '' });
+      toast.success('Thanks. Your testimonial was sent for review.');
+    } catch {
+      toast.error('Could not send testimonial. Please try again.');
+    } finally {
+      setSubmittingTestimonial(false);
+    }
   };
 
   return (
@@ -230,15 +265,124 @@ export default function Home() {
         </div>
       </section>
 
+      {visibleTestimonials.length > 0 && activeTestimonial && (
+        <section className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:gap-14 lg:py-20">
+          <div>
+            <div className="mb-5 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">
+              <MessageCircle size={14} /> Testimonials
+            </div>
+            <h2 className="text-3xl font-serif leading-tight md:text-5xl">{content.testimonialsTitle}</h2>
+            <p className="mt-5 max-w-xl text-stone-500">{content.testimonialsSubtitle}</p>
+
+            <div className="mt-8 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {visibleTestimonials.map((testimonial, index) => (
+                <button
+                  key={testimonial.id}
+                  onClick={() => setActiveTestimonialIndex(index)}
+                  className={`min-h-12 whitespace-nowrap rounded-full px-5 text-[10px] font-black uppercase tracking-widest transition-colors ${index === activeTestimonialIndex ? 'bg-brand-primary text-brand-cream' : 'bg-white text-stone-500 hover:text-brand-primary'}`}
+                >
+                  {testimonial.project || testimonial.clientName}
+                </button>
+              ))}
+            </div>
+
+            <blockquote className="mt-10 border-l-4 border-brand-primary pl-6">
+              <p className="text-2xl font-serif leading-snug text-stone-900 md:text-3xl">"{activeTestimonial.quote}"</p>
+              <footer className="mt-5 text-sm font-bold text-stone-500">
+                {activeTestimonial.clientName}
+                {activeTestimonial.project && <span className="text-stone-300"> · {activeTestimonial.project}</span>}
+              </footer>
+            </blockquote>
+          </div>
+
+          <div className="overflow-hidden rounded-[32px] bg-white p-3 shadow-sm md:rounded-[40px]">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-[24px] bg-stone-100 md:rounded-[32px]">
+              <img
+                src={testimonialView === 'before' ? activeTestimonial.beforeImage : activeTestimonial.afterImage}
+                alt={`${testimonialView} ${activeTestimonial.project || 'testimonial project'}`}
+                className="h-full w-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute left-4 top-4 inline-flex rounded-full bg-white/90 p-1 text-[10px] font-black uppercase tracking-widest shadow-sm backdrop-blur">
+                {(['before', 'after'] as const).map(view => (
+                  <button
+                    key={view}
+                    onClick={() => setTestimonialView(view)}
+                    className={`rounded-full px-4 py-2 transition-colors ${testimonialView === view ? 'bg-brand-primary text-brand-cream' : 'text-stone-500'}`}
+                  >
+                    {view}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <section className="mx-4 overflow-hidden rounded-[28px] bg-white md:rounded-[40px]">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-5 py-10 md:grid-cols-[0.85fr_1.15fr] md:px-8 md:py-16">
+          <div>
+            <p className="mb-4 text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">Add testimonial</p>
+            <h2 className="text-3xl font-serif leading-tight md:text-5xl">Share your Maridadi result</h2>
+            <p className="mt-5 text-stone-500">Tell us what changed. Add before and after image links if you have them.</p>
+          </div>
+          <form onSubmit={submitTestimonial} className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <input
+              value={testimonialForm.clientName}
+              onChange={(event) => setTestimonialForm(prev => ({ ...prev, clientName: event.target.value }))}
+              placeholder="Your name"
+              className="min-h-12 rounded-2xl border border-stone-100 bg-stone-50 px-4 text-sm outline-none focus:border-brand-primary"
+            />
+            <input
+              value={testimonialForm.project}
+              onChange={(event) => setTestimonialForm(prev => ({ ...prev, project: event.target.value }))}
+              placeholder="Project type"
+              className="min-h-12 rounded-2xl border border-stone-100 bg-stone-50 px-4 text-sm outline-none focus:border-brand-primary"
+            />
+            <textarea
+              value={testimonialForm.quote}
+              onChange={(event) => setTestimonialForm(prev => ({ ...prev, quote: event.target.value }))}
+              placeholder="What did we create for you?"
+              className="min-h-28 rounded-2xl border border-stone-100 bg-stone-50 p-4 text-sm outline-none focus:border-brand-primary md:col-span-2"
+            />
+            <div className="relative">
+              <ImageIcon size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" />
+              <input
+                value={testimonialForm.beforeImage}
+                onChange={(event) => setTestimonialForm(prev => ({ ...prev, beforeImage: event.target.value }))}
+                placeholder="Before image URL"
+                className="min-h-12 w-full rounded-2xl border border-stone-100 bg-stone-50 pl-11 pr-4 text-sm outline-none focus:border-brand-primary"
+              />
+            </div>
+            <div className="relative">
+              <ImageIcon size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" />
+              <input
+                value={testimonialForm.afterImage}
+                onChange={(event) => setTestimonialForm(prev => ({ ...prev, afterImage: event.target.value }))}
+                placeholder="After image URL"
+                className="min-h-12 w-full rounded-2xl border border-stone-100 bg-stone-50 pl-11 pr-4 text-sm outline-none focus:border-brand-primary"
+              />
+            </div>
+            <button
+              disabled={submittingTestimonial}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-stone-900 px-6 text-[10px] font-black uppercase tracking-widest text-white disabled:opacity-60 md:col-span-2"
+            >
+              {submittingTestimonial ? 'Sending...' : 'Send testimonial'} <Send size={14} />
+            </button>
+          </form>
+        </div>
+      </section>
+
       <section className="mx-auto max-w-7xl px-4 py-12 lg:py-20">
         <div className="flex flex-col items-start justify-between gap-6 border-t border-stone-200 pt-10 md:flex-row md:items-center">
           <div>
-            <p className="mb-3 text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">Custom request</p>
-            <h2 className="text-3xl font-serif leading-tight md:text-5xl">Have something unique in mind?</h2>
+            <p className="mb-3 text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">Contact</p>
+            <h2 className="text-3xl font-serif leading-tight md:text-5xl">{content.contact.heading}</h2>
+            <p className="mt-4 max-w-2xl text-stone-500">{content.contact.subtext}</p>
           </div>
-          <Link to="/analyzer" className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-6 py-4 text-xs font-black uppercase tracking-widest text-white">
-            Start custom design <Sparkles size={16} />
-          </Link>
+          <a href={content.contact.ctaHref} className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-6 py-4 text-xs font-black uppercase tracking-widest text-white">
+            {content.contact.ctaLabel} <Sparkles size={16} />
+          </a>
         </div>
       </section>
     </div>

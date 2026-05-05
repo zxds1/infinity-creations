@@ -181,17 +181,20 @@ app.post('/api/analyze-space', async (req, res) => {
     };
 
     const basePrompt = `
-      You are an expert interior designer for "Maridadi Creations".
-      Analyze the provided visual input(s) of a room and provide:
-      1. Overall style analysis.
-      2. 5 specific recommendations for home decor (wall art, furniture, lighting, plants).
-      3. Suggest how Maridadi Creations services (Photo Mounts, Custom Furniture, Branding, Portraits) could improve this space.
+      You are a senior creative production consultant for "Maridadi Creations", a design, print, gift, decor, sticker, and branding studio.
+      Use the provided brief and any visual references to create a practical custom order direction.
+      Include:
+      1. A concise style direction.
+      2. Recommended colors, materials, sizes, finishes, or print treatments.
+      3. 3-5 customization options the customer can choose from.
+      4. Production notes Maridadi should confirm before quoting.
+      5. Suggested next step for the customer.
 
       Format your response in professional Markdown.
     `;
 
     const prompt = refinementPrompt
-      ? `Based on the previous analysis of this room, please refine the recommendations. The user specifically wants: ${refinementPrompt}. Provide creative and practical interior design advice including furniture, color palette, and decor based on the artisanal spirit of Maridadi.`
+      ? `Create or refine a Maridadi Creations custom order direction from this customer brief: ${refinementPrompt}. If visual references are provided, use them. Be practical about design, print, branding, decor, sticker, gift, or production choices.`
       : basePrompt;
 
     const parts: any[] = [{ text: prompt }];

@@ -6,6 +6,7 @@ import { Camera, ShoppingBag, Paintbrush, User as UserIcon, X, ChevronRight, Set
 import { motion, AnimatePresence } from 'motion/react';
 import SocialIcon from './SocialIcon';
 import { defaultSiteContent, fetchSiteContent, type SiteContent } from '../lib/siteContent';
+import LogoMark from './LogoMark';
 
 export default function Sidebar() {
   const [user, setUser] = useState<User | null>(null);
@@ -91,7 +92,7 @@ export default function Sidebar() {
         className="hidden lg:flex fixed left-0 top-0 bottom-0 z-50 bg-white border-r border-brand-primary/5 flex-col py-8 px-4 transition-all duration-300 ease-in-out"
       >
         <div className="flex items-center gap-3 px-2 mb-12 overflow-hidden relative shrink-0">
-          <div className="min-w-[48px] h-[48px] bg-brand-primary rounded-2xl flex items-center justify-center text-brand-cream font-serif text-2xl italic shadow-lg shadow-brand-primary/20">M</div>
+          <LogoMark className="h-12 w-12 min-w-12 rounded-2xl shadow-lg shadow-brand-primary/20" />
           <AnimatePresence>
             {isExpanded && (
               <motion.span 

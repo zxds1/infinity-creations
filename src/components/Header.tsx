@@ -6,6 +6,7 @@ import { Camera, ShoppingBag, Paintbrush, User as UserIcon, Search, Sparkles } f
 import { motion, AnimatePresence } from 'motion/react';
 import Tooltip from './Tooltip';
 import ThemeSwitch from './ThemeSwitch';
+import LogoMark from './LogoMark';
 
 export default function Header() {
   const [user, setUser] = useState<User | null>(null);
@@ -74,7 +75,7 @@ export default function Header() {
     <header className="sticky top-0 z-[60] bg-white/80 backdrop-blur-xl border-b border-stone-100">
       <div className="max-w-[1600px] mx-auto px-4 h-16 flex items-center justify-between md:px-6 md:h-20">
         <Link to="/" className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-brand-primary rounded-xl flex items-center justify-center text-brand-cream font-serif text-xl italic shadow-lg shadow-brand-primary/10 md:h-10 md:w-10 md:text-2xl">M</div>
+          <LogoMark className="h-9 w-9 rounded-xl shadow-lg shadow-brand-primary/10 md:h-10 md:w-10" />
           <div className="flex flex-col">
             <span className="font-serif text-lg font-bold tracking-tight text-stone-900 leading-none mb-0.5 md:text-xl">Maridadi</span>
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-primary/60">Creations</span>

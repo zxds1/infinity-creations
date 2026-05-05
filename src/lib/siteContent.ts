@@ -22,6 +22,26 @@ export interface ServiceOffering {
   order: number;
 }
 
+export interface ContactContent {
+  heading: string;
+  subtext: string;
+  location: string;
+  email: string;
+  phone: string;
+  ctaLabel: string;
+  ctaHref: string;
+}
+
+export interface TestimonialContent {
+  id: string;
+  clientName: string;
+  project: string;
+  quote: string;
+  beforeImage: string;
+  afterImage: string;
+  order: number;
+}
+
 export interface SiteContent {
   homeHeroTitle: string;
   homeHeroSubtitle: string;
@@ -37,6 +57,10 @@ export interface SiteContent {
   customizeSubtitle: string;
   businessTitle: string;
   businessSubtitle: string;
+  contact: ContactContent;
+  testimonialsTitle: string;
+  testimonialsSubtitle: string;
+  testimonials: TestimonialContent[];
   categories: CreationCategory[];
   services: ServiceOffering[];
   socialLinks: SocialLink[];
@@ -179,6 +203,37 @@ export const defaultServiceOfferings: ServiceOffering[] = [
   }
 ];
 
+export const defaultContactContent: ContactContent = {
+  heading: 'Ready to start your custom piece?',
+  subtext: 'Send your idea, photo, brand note, or size details and we will guide the next step.',
+  location: 'Nairobi, Kenya',
+  email: 'hello@maridadicreations.com',
+  phone: '+254 700 000 000',
+  ctaLabel: 'Message us',
+  ctaHref: 'mailto:hello@maridadicreations.com'
+};
+
+export const defaultTestimonials: TestimonialContent[] = [
+  {
+    id: 'photo-mount-home',
+    clientName: 'A satisfied client',
+    project: 'Photo mount refresh',
+    quote: 'The final mount made the whole wall feel personal and finished.',
+    beforeImage: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=900',
+    afterImage: 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=900',
+    order: 1
+  },
+  {
+    id: 'business-branding-launch',
+    clientName: 'Small business owner',
+    project: 'Banner and launch branding',
+    quote: 'The colours, print quality, and finish made our launch setup look professional.',
+    beforeImage: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=900',
+    afterImage: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=900',
+    order: 2
+  }
+];
+
 export const defaultSiteContent: SiteContent = {
   homeHeroTitle: 'What do you want to create today?',
   homeHeroSubtitle: 'Personal items, custom designs, or full business branding — we have got you covered.',
@@ -194,6 +249,10 @@ export const defaultSiteContent: SiteContent = {
   customizeSubtitle: 'Tell us what you want, and we will help you create it.',
   businessTitle: 'Branding for your business',
   businessSubtitle: 'From banners to vehicle branding, we help your business stand out.',
+  contact: defaultContactContent,
+  testimonialsTitle: 'Client transformations',
+  testimonialsSubtitle: 'Before and after moments from people who trusted us with their ideas.',
+  testimonials: defaultTestimonials,
   categories: defaultCreationCategories,
   services: defaultServiceOfferings,
   socialLinks: defaultSocialLinks
@@ -215,6 +274,18 @@ export function mergeSiteContent(data?: Partial<SiteContent> | null): SiteConten
           ...service
         })).sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
       : defaultSiteContent.services,
+    contact: {
+      ...defaultContactContent,
+      ...(data?.contact || {})
+    },
+    testimonials: data && 'testimonials' in data && Array.isArray(data.testimonials)
+      ? data.testimonials.map((testimonial, index) => ({
+          ...defaultTestimonials[index % defaultTestimonials.length],
+          ...testimonial,
+          id: testimonial.id || `testimonial-${index + 1}`,
+          order: Number(testimonial.order ?? index + 1)
+        })).sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
+      : defaultSiteContent.testimonials,
     socialLinks: normalizeSocialLinks(data?.socialLinks)
   };
 }

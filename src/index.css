@@ -34,9 +34,18 @@
     background-color: #171612 !important;
   }
 
+  .dark .bg-brand-cream\/95 {
+    background-color: rgb(17 16 13 / 0.95) !important;
+  }
+
   .dark .bg-white\/80,
   .dark .bg-white\/95 {
     background-color: rgb(23 22 18 / 0.86) !important;
+  }
+
+  .dark .bg-white\/60,
+  .dark .bg-white\/90 {
+    background-color: rgb(31 29 25 / 0.72) !important;
   }
 
   .dark .bg-stone-50,
