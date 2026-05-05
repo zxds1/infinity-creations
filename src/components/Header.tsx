@@ -67,16 +67,16 @@ export default function Header() {
     { name: 'Discover', path: '/shop', icon: ShoppingBag },
     { name: 'Design', path: '/analyzer', icon: Camera },
     { name: 'Activity', path: '/orders', icon: UserIcon },
-    { name: 'Account', path: '/wishlist', icon: Heart },
+    { name: 'Saved', path: '/wishlist', icon: Heart },
   ];
 
   return (
-    <header className="sticky top-0 z-[60] bg-white/60 backdrop-blur-xl border-b border-stone-100">
-      <div className="max-w-[1600px] mx-auto px-6 h-20 flex items-center justify-between">
+    <header className="sticky top-0 z-[60] bg-white/80 backdrop-blur-xl border-b border-stone-100">
+      <div className="max-w-[1600px] mx-auto px-4 h-16 flex items-center justify-between md:px-6 md:h-20">
         <Link to="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-brand-primary rounded-xl flex items-center justify-center text-brand-cream font-serif text-2xl italic shadow-lg shadow-brand-primary/10">M</div>
+          <div className="w-9 h-9 bg-brand-primary rounded-xl flex items-center justify-center text-brand-cream font-serif text-xl italic shadow-lg shadow-brand-primary/10 md:h-10 md:w-10 md:text-2xl">M</div>
           <div className="flex flex-col">
-            <span className="font-serif text-xl font-bold tracking-tight text-stone-900 leading-none mb-0.5">Maridadi</span>
+            <span className="font-serif text-lg font-bold tracking-tight text-stone-900 leading-none mb-0.5 md:text-xl">Maridadi</span>
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-primary/60">Creations</span>
           </div>
         </Link>
@@ -94,11 +94,11 @@ export default function Header() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2 md:gap-6">
           <div className="relative" ref={searchRef}>
             <button 
               onClick={() => setIsSearching(!isSearching)}
-              className="p-3 text-stone-400 hover:text-brand-primary hover:bg-stone-50 rounded-full transition-all"
+              className="min-h-11 min-w-11 rounded-full p-3 text-stone-400 hover:text-brand-primary hover:bg-stone-50 transition-all"
             >
               <Search size={18} />
             </button>
@@ -109,7 +109,7 @@ export default function Header() {
                   initial={{ opacity: 0, scale: 0.95, y: 10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                  className="absolute right-0 mt-4 w-[400px] bg-white rounded-3xl shadow-2xl border border-stone-100 overflow-hidden"
+                  className="fixed left-3 right-3 top-16 mt-2 max-h-[75vh] overflow-hidden rounded-3xl border border-stone-100 bg-white shadow-2xl sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-4 sm:w-[400px]"
                 >
                   <div className="p-4 border-b border-stone-50 bg-stone-50/50">
                     <div className="relative">
@@ -179,9 +179,9 @@ export default function Header() {
             </AnimatePresence>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <Tooltip content="Order History">
-              <Link to="/orders" className="p-3 text-stone-400 hover:text-brand-primary hover:bg-stone-50 rounded-full transition-all">
+              <Link to="/orders" className="hidden p-3 text-stone-400 hover:text-brand-primary hover:bg-stone-50 rounded-full transition-all sm:block">
                 <UserIcon size={18} />
               </Link>
             </Tooltip>

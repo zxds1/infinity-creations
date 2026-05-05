@@ -12,9 +12,9 @@ const quickCategories = [
 ];
 
 const onboardingSteps = [
-  { title: 'Search products', body: 'Start with a product, style, or room need.' },
-  { title: 'Compare options', body: 'Use visible compare controls to narrow your decision.' },
-  { title: 'Save what fits', body: 'Wishlist keeps your strongest options and similar items.' }
+  { title: 'Search your style', body: 'Start with a product, room, color, or gift idea.' },
+  { title: 'Compare with confidence', body: 'See price, rating, location, and availability side by side.' },
+  { title: 'Save your favorites', body: 'Keep the pieces you love and return when you are ready.' }
 ];
 
 export default function Home() {
@@ -46,8 +46,8 @@ export default function Home() {
   };
 
   return (
-    <div className="pb-24">
-      <section className="relative min-h-[calc(100svh-80px)] overflow-hidden bg-stone-950 text-white">
+    <div className="pb-12 lg:pb-24">
+      <section className="relative min-h-[calc(100svh-64px)] overflow-hidden bg-stone-950 text-white md:min-h-[calc(100svh-80px)]">
         <img
           src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&q=80&w=2200"
           alt="Warm modern interior with curated furniture"
@@ -56,23 +56,23 @@ export default function Home() {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-stone-950 via-stone-950/70 to-stone-950/10" />
 
-        <div className="relative z-10 mx-auto flex min-h-[calc(100svh-80px)] max-w-7xl flex-col justify-center px-4 py-12">
+        <div className="relative z-10 mx-auto flex min-h-[calc(100svh-64px)] max-w-7xl flex-col justify-center px-4 py-8 md:min-h-[calc(100svh-80px)] md:py-12">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, ease: 'easeOut' }}
             className="max-w-3xl"
           >
-            <p className="mb-4 text-[11px] font-black uppercase tracking-[0.28em] text-white/60">Maridadi Creations</p>
-            <h1 className="text-5xl font-semibold leading-[0.95] tracking-normal md:text-7xl lg:text-8xl">
-              Find the right piece faster.
+            <p className="mb-3 text-[10px] font-black uppercase tracking-[0.24em] text-white/60 md:mb-4 md:text-[11px]">Maridadi Creations</p>
+            <h1 className="text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl md:text-7xl lg:text-8xl">
+              Find pieces that feel made for your space.
             </h1>
-            <p className="mt-6 max-w-xl text-base leading-relaxed text-white/75 md:text-lg">
-              Search, compare, and save products before you buy. Find the best option near you with clear pricing and seller context.
+            <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/75 md:mt-6 md:text-lg">
+              Browse furniture, jewelry, wall art, and custom services with clear pricing, availability, and delivery details.
             </p>
 
-            <form onSubmit={submitSearch} className="mt-10 max-w-2xl">
-              <div className="flex flex-col gap-3 rounded-[28px] bg-white p-2 shadow-2xl shadow-stone-950/30 sm:flex-row">
+            <form onSubmit={submitSearch} className="mt-7 max-w-2xl md:mt-10">
+              <div className="flex flex-col gap-2 rounded-[24px] bg-white p-2 shadow-2xl shadow-stone-950/30 sm:flex-row md:rounded-[28px]">
                 <div className="flex min-h-14 flex-1 items-center gap-3 px-4">
                   <Search size={20} className="text-stone-400" />
                   <input
@@ -82,20 +82,20 @@ export default function Home() {
                     className="w-full bg-transparent text-sm font-semibold text-stone-900 outline-none placeholder:text-stone-400"
                   />
                 </div>
-                <button className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-brand-primary px-6 text-xs font-black uppercase tracking-widest text-brand-cream">
-                  Discover <ArrowRight size={16} />
+                <button className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-brand-primary px-6 text-xs font-black uppercase tracking-widest text-brand-cream md:min-h-14">
+                  Search <ArrowRight size={16} />
                 </button>
               </div>
             </form>
 
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-5 flex gap-2 overflow-x-auto pb-2 scrollbar-hide md:mt-6 md:flex-wrap md:gap-3">
               {quickCategories.map(category => {
                 const Icon = category.icon;
                 return (
                   <Link
                     key={category.label}
                     to={`/shop?category=${encodeURIComponent(category.label)}`}
-                    className="group inline-flex items-center gap-3 rounded-full bg-white/10 px-4 py-3 text-left backdrop-blur-md transition-colors hover:bg-white hover:text-stone-900"
+                    className="group inline-flex min-w-[190px] items-center gap-3 rounded-full bg-white/10 px-4 py-3 text-left backdrop-blur-md transition-colors hover:bg-white hover:text-stone-900 md:min-w-0"
                   >
                     <Icon size={18} />
                     <span>
@@ -108,7 +108,7 @@ export default function Home() {
             </div>
           </motion.div>
 
-          <div className="mt-12 grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="mt-7 grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3 md:mt-12">
             {onboardingSteps.map((step, index) => (
               <motion.div
                 key={step.title}
@@ -126,21 +126,21 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-4 py-20 lg:grid-cols-[0.85fr_1.15fr]">
+      <section className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-12 lg:py-20">
         <div>
           <div className="mb-5 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">
             <SlidersHorizontal size={14} /> Popular right now
           </div>
-          <h2 className="text-4xl font-serif leading-tight md:text-5xl">Products people are deciding between.</h2>
+          <h2 className="text-3xl font-serif leading-tight md:text-5xl">Products people are deciding between.</h2>
           <p className="mt-5 text-stone-500">
-            Start from high-signal items, compare products before you buy, and keep the strongest options in your wishlist.
+            Start with popular pieces, compare what matters, and keep your favorites in one place.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link to="/shop" className="inline-flex items-center gap-2 rounded-full bg-stone-900 px-5 py-3 text-xs font-black uppercase tracking-widest text-white">
-              Compare products <ArrowRight size={14} />
+              Shop the collection <ArrowRight size={14} />
             </Link>
             <Link to="/analyzer" className="inline-flex items-center gap-2 rounded-full border border-stone-200 px-5 py-3 text-xs font-black uppercase tracking-widest text-stone-700">
-              Use analyzer <Camera size={14} />
+              Get room ideas <Camera size={14} />
             </Link>
           </div>
         </div>
@@ -193,18 +193,18 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-4 overflow-hidden rounded-[40px] bg-brand-primary text-brand-cream">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-8 py-16 md:grid-cols-2 md:items-center">
+      <section className="mx-4 overflow-hidden rounded-[28px] bg-brand-primary text-brand-cream md:rounded-[40px]">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-5 py-10 md:grid-cols-2 md:items-center md:px-8 md:py-16">
           <div>
-            <p className="mb-4 text-[10px] font-black uppercase tracking-[0.24em] text-white/50">Trust signals</p>
-            <h2 className="text-4xl font-serif leading-tight md:text-5xl">Clear next steps before checkout.</h2>
+            <p className="mb-4 text-[10px] font-black uppercase tracking-[0.24em] text-white/50">Why shop with us</p>
+            <h2 className="text-3xl font-serif leading-tight md:text-5xl">Know what to expect before you pay.</h2>
           </div>
           <div className="grid gap-4">
             {[
-              { icon: CheckCircle2, text: 'Consistent pricing and server-verified checkout totals.' },
-              { icon: Truck, text: 'Delivery estimate shown before payment starts.' },
-              { icon: Star, text: 'Seller identity, location, and availability shown on product details.' },
-              { icon: Sparkles, text: 'Analyzer preferences rank products when you return to discovery.' }
+              { icon: CheckCircle2, text: 'Final pricing is confirmed clearly at checkout.' },
+              { icon: Truck, text: 'Delivery estimates are shown before payment.' },
+              { icon: Star, text: 'Seller, location, and availability details are easy to review.' },
+              { icon: Sparkles, text: 'Your room ideas help personalize future recommendations.' }
             ].map(item => {
               const Icon = item.icon;
               return (

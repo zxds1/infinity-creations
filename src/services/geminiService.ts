@@ -27,8 +27,8 @@ export async function generateAdminInsights(orders: any[], products: any[]) {
 
     if (!response.ok) throw new Error('insight-request-failed');
     const data = await response.json();
-    return data.text || "Strategy data unavailable.";
+    return data.text || "Store insights unavailable.";
   } catch (error) {
-    return "Market analysis failed.";
+    return "Store insights could not be created.";
   }
 }

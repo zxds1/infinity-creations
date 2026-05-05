@@ -169,7 +169,7 @@ export default function SpaceAnalyzer() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Maridadi AI Recommendations',
+          title: 'Maridadi Style Recommendations',
           text: result.substring(0, 500) + '...',
           url: window.location.href,
         });
@@ -182,7 +182,7 @@ export default function SpaceAnalyzer() {
         await navigator.clipboard.writeText(result);
         toast.success("Recommendations copied to clipboard!");
       } catch (err) {
-        toast.error("Cloud not copy to clipboard");
+        toast.error("Could not copy to clipboard");
       }
     }
   };
@@ -274,7 +274,7 @@ export default function SpaceAnalyzer() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12">
+    <div className="max-w-5xl mx-auto px-3 py-8 sm:px-4 md:py-12">
       {/* Cropping Modal */}
       <AnimatePresence>
         {editingMediaIndex !== null && mediaFiles[editingMediaIndex] && (
@@ -327,22 +327,22 @@ export default function SpaceAnalyzer() {
         )}
       </AnimatePresence>
 
-      <div className="text-center mb-12">
-        <h1 className="text-5xl md:text-6xl mb-4 italic font-light">AI <span className="font-serif not-italic">Analyzer</span></h1>
-        <p className="text-stone-500 text-lg max-w-2xl mx-auto leading-relaxed">
+      <div className="text-center mb-8 md:mb-12">
+        <h1 className="mb-3 text-4xl italic font-light leading-none md:mb-4 md:text-6xl">Room <span className="font-serif not-italic">Style Finder</span></h1>
+        <p className="text-stone-500 text-sm max-w-2xl mx-auto leading-relaxed md:text-lg">
           Tell us your style with a room photo so we can recommend better products and matching items.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
         {/* Media Intake Side */}
-        <div className="space-y-8">
-          <div className="bg-white rounded-[40px] border border-stone-100 p-8 shadow-sm">
-            <div className="flex gap-4 mb-8">
+        <div className="space-y-6 md:space-y-8">
+          <div className="bg-white rounded-[28px] border border-stone-100 p-4 shadow-sm md:rounded-[40px] md:p-8">
+            <div className="flex gap-3 mb-5 md:gap-4 md:mb-8">
               <Tooltip content="Upload Images/Video">
                 <button 
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-16 h-16 rounded-2xl bg-stone-50 border border-stone-100 flex items-center justify-center text-stone-500 hover:bg-brand-primary hover:text-white transition-all"
+                  className="flex h-14 w-14 items-center justify-center rounded-2xl border border-stone-100 bg-stone-50 text-stone-500 transition-all hover:bg-brand-primary hover:text-white md:h-16 md:w-16"
                 >
                   <Upload size={24} />
                 </button>
@@ -350,7 +350,7 @@ export default function SpaceAnalyzer() {
               <Tooltip content={isCameraActive ? "Stop Camera" : "Live Camera"}>
                 <button 
                   onClick={isCameraActive ? stopCamera : startCamera}
-                  className={`w-16 h-16 rounded-2xl border flex items-center justify-center transition-all ${isCameraActive ? 'bg-red-50 border-red-100 text-red-500' : 'bg-stone-50 border-stone-100 text-stone-500 hover:bg-brand-primary hover:text-white'}`}
+                  className={`flex h-14 w-14 items-center justify-center rounded-2xl border transition-all md:h-16 md:w-16 ${isCameraActive ? 'bg-red-50 border-red-100 text-red-500' : 'bg-stone-50 border-stone-100 text-stone-500 hover:bg-brand-primary hover:text-white'}`}
                 >
                   <Camera size={24} />
                 </button>
@@ -359,7 +359,7 @@ export default function SpaceAnalyzer() {
                 <Tooltip content="Capture Snapshot">
                   <button 
                     onClick={captureFrame}
-                    className="w-16 h-16 rounded-2xl bg-brand-primary text-brand-cream flex items-center justify-center animate-pulse shadow-lg"
+                    className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-primary text-brand-cream shadow-lg animate-pulse md:h-16 md:w-16"
                   >
                     <Plus size={24} />
                   </button>
@@ -367,7 +367,7 @@ export default function SpaceAnalyzer() {
               )}
             </div>
 
-            <div className="aspect-video bg-stone-900 rounded-[32px] overflow-hidden relative group">
+            <div className="aspect-[4/3] bg-stone-900 rounded-[24px] overflow-hidden relative group md:aspect-video md:rounded-[32px]">
               {isCameraActive ? (
                 <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
               ) : mediaFiles.length > 0 ? (
@@ -381,14 +381,14 @@ export default function SpaceAnalyzer() {
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-stone-500 gap-4">
                   <Video size={48} className="opacity-20" />
-                  <span className="text-sm font-medium tracking-widest uppercase opacity-40">No Input Active</span>
+                  <span className="text-sm font-medium tracking-widest uppercase opacity-40">Add a room photo or video</span>
                 </div>
               )}
               <canvas ref={canvasRef} className="hidden" />
             </div>
 
             {/* Media Gallery */}
-            <div className="mt-8 grid grid-cols-4 gap-4 overflow-x-auto pb-4 scrollbar-hide">
+            <div className="mt-5 grid auto-cols-[72px] grid-flow-col gap-3 overflow-x-auto pb-3 scrollbar-hide md:mt-8 md:grid-cols-4 md:grid-flow-row md:gap-4">
               {mediaFiles.map((file, idx) => (
                 <motion.div 
                   key={idx} 
@@ -455,7 +455,7 @@ export default function SpaceAnalyzer() {
           <button
             onClick={() => runAnalysis()}
             disabled={mediaFiles.length === 0 || analyzing}
-            className={`w-full py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 transition-all relative overflow-hidden ${analyzing ? 'bg-stone-100 text-stone-400 cursor-not-allowed border border-stone-200' : 'bg-brand-primary text-brand-cream hover:shadow-2xl hover:shadow-brand-primary/20 shadow-lg active:scale-[0.98]'}`}
+            className={`w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-3 transition-all relative overflow-hidden md:py-5 md:text-lg ${analyzing ? 'bg-stone-100 text-stone-400 cursor-not-allowed border border-stone-200' : 'bg-brand-primary text-brand-cream hover:shadow-2xl hover:shadow-brand-primary/20 shadow-lg active:scale-[0.98]'}`}
           >
             {analyzing && (
               <motion.div 
@@ -470,7 +470,7 @@ export default function SpaceAnalyzer() {
               ) : (
                 <Sparkles size={24} />
               )}
-              {analyzing ? `Curating your sanctuary... ${Math.round(analysisProgress)}%` : 'Transform My Space'}
+              {analyzing ? `Preparing your recommendations... ${Math.round(analysisProgress)}%` : 'Find ideas for my space'}
             </div>
           </button>
 
@@ -480,7 +480,7 @@ export default function SpaceAnalyzer() {
         </div>
 
         {/* Results Side */}
-        <div className="bg-white rounded-[40px] border border-brand-primary/10 min-h-[500px] flex flex-col relative overflow-hidden shadow-sm">
+        <div className="bg-white rounded-[28px] border border-brand-primary/10 min-h-[420px] flex flex-col relative overflow-hidden shadow-sm md:min-h-[500px] md:rounded-[40px]">
           <AnimatePresence mode="wait">
             {analyzing ? (
               <motion.div 
@@ -496,7 +496,7 @@ export default function SpaceAnalyzer() {
                 </div>
                 <div>
                   <h3 className="text-2xl mb-2 font-serif">Reading your space...</h3>
-                  <p className="text-stone-400 italic">AI is identifying furniture placement, lighting, and style opportunities.</p>
+                  <p className="text-stone-400 italic">We are looking at layout, lighting, colors, and style opportunities.</p>
                 </div>
               </motion.div>
             ) : result ? (
@@ -504,11 +504,11 @@ export default function SpaceAnalyzer() {
                 key="result"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="p-10 overflow-y-auto max-h-[80vh]"
+                className="p-5 overflow-y-auto max-h-none md:p-10 md:max-h-[80vh]"
               >
                 <div className="flex justify-between items-center mb-8 pb-4 border-b border-stone-100">
                   <div className="flex items-center gap-2 text-brand-primary font-bold uppercase tracking-[0.2em] text-xs">
-                    <Sparkles size={14} /> AI Recommendation
+                    <Sparkles size={14} /> Style recommendations
                   </div>
                   <div className="flex gap-2">
                     <button 
@@ -525,11 +525,11 @@ export default function SpaceAnalyzer() {
                 </div>
 
                 {matchedProducts.length > 0 && (
-                  <div className="mt-12 border-t border-stone-100 pt-10">
-                    <div className="mb-6 flex items-center justify-between gap-4">
+                  <div className="mt-8 border-t border-stone-100 pt-8 md:mt-12 md:pt-10">
+                    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <h4 className="text-xl font-serif text-stone-900">Matching products</h4>
-                        <p className="text-sm text-stone-400">Ranked from the style, color, and layout cues found in your analysis.</p>
+                        <p className="text-sm text-stone-400">Chosen from the style, color, and layout details in your room.</p>
                       </div>
                       <Link to="/shop" className="text-[10px] font-black uppercase tracking-widest text-brand-primary flex items-center gap-2">
                         Compare all <ChevronRight size={14} />
@@ -560,7 +560,7 @@ export default function SpaceAnalyzer() {
                       <RefreshCw size={20} />
                     </div>
                     <div>
-                      <h4 className="font-bold text-sm">Refine Recommendations</h4>
+                      <h4 className="font-bold text-sm">Refine recommendations</h4>
                       <p className="text-[10px] text-stone-400 uppercase tracking-widest">Tailor your results further</p>
                     </div>
                   </div>
@@ -583,11 +583,11 @@ export default function SpaceAnalyzer() {
                 </div>
 
                 <div className="mt-12 bg-brand-primary/5 p-8 rounded-3xl border border-brand-primary/10">
-                  <h4 className="text-xl mb-4 font-serif text-brand-primary">Apply this design?</h4>
-                  <p className="text-stone-600 mb-6 text-sm">We can custom build furniture or print the art suggested above specifically for your space.</p>
+                  <h4 className="text-xl mb-4 font-serif text-brand-primary">Want help bringing it to life?</h4>
+                  <p className="text-stone-600 mb-6 text-sm">We can build custom furniture or create art pieces tailored to your space.</p>
                   <div className="flex gap-3">
                     <button className="bg-brand-primary text-brand-cream px-6 py-3 rounded-full text-sm font-bold flex items-center gap-2">
-                      Request Quote <ChevronRight size={16} />
+                      Request a quote <ChevronRight size={16} />
                     </button>
                   </div>
                 </div>
@@ -595,7 +595,7 @@ export default function SpaceAnalyzer() {
             ) : (
               <div className="flex flex-col items-center justify-center flex-1 p-12 text-center text-stone-300">
                 <Sparkles size={64} className="mb-6 opacity-20" />
-                <p className="text-lg">Upload a photo to see <br />magic happen here.</p>
+                <p className="text-lg">Upload a photo to see <br />your recommendations here.</p>
               </div>
             )}
           </AnimatePresence>

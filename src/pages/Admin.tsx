@@ -40,7 +40,7 @@ export default function Admin() {
   
   const generateInsights = async () => {
     if (orders.length === 0 && products.length === 0) {
-      toast.error("Not enough data to generate strategy");
+      toast.error("Not enough data to create insights");
       return;
     }
     setGeneratingInsights(true);
@@ -48,9 +48,9 @@ export default function Admin() {
       const insights = await generateAdminInsights(orders, products);
       setAiInsights(insights);
       setActiveTab('insights');
-      toast.success("Strategic insights generated");
+      toast.success("Store insights created");
     } catch (err) {
-      toast.error("Failed to generate AI strategy");
+      toast.error("Failed to create insights");
     } finally {
       setGeneratingInsights(false);
     }
@@ -223,8 +223,8 @@ export default function Admin() {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
         <XCircle size={64} className="text-red-400 mb-6" />
-        <h1 className="text-4xl font-serif mb-4">Access Denied</h1>
-        <p className="text-stone-500">Only users listed in the admins collection can access the Maridadi command center.</p>
+        <h1 className="text-4xl font-serif mb-4">Admin access required</h1>
+        <p className="text-stone-500">Sign in with an approved Maridadi admin account to manage the store.</p>
       </div>
     );
   }
@@ -238,10 +238,10 @@ export default function Admin() {
             <div>
               <div className="flex items-center gap-2 text-brand-primary font-bold uppercase tracking-[0.2em] text-[10px] mb-2">
                 <Settings size={14} className="animate-spin-slow" />
-                Maridadi Command Center
+                Maridadi Admin
               </div>
               <h1 className="text-4xl md:text-5xl font-serif italic font-light leading-tight">
-                Business <span className="not-italic font-bold">Logistics</span>
+                Store <span className="not-italic font-bold">Management</span>
               </h1>
             </div>
             <button 
@@ -254,7 +254,7 @@ export default function Admin() {
               ) : (
                 <Sparkles size={14} />
               )}
-              {generatingInsights ? 'Analyzing...' : 'Generate AI Strategy'}
+              {generatingInsights ? 'Reviewing...' : 'Create store insights'}
             </button>
           </div>
 
@@ -353,7 +353,7 @@ export default function Admin() {
                           <button onClick={() => updateOrderStatus(order.id, 'processing')} className="p-2 rounded-lg bg-stone-100 text-stone-400 hover:text-stone-900" title="Process"><Edit3 size={16} /></button>
                           <button 
                             onClick={() => {
-                              const tracking = window.prompt("Enter Tracking Number:");
+                              const tracking = window.prompt("Enter tracking number:");
                               if (tracking) updateOrderStatus(order.id, 'shipped', tracking);
                             }} 
                             className="p-2 rounded-lg bg-blue-50 text-blue-400 hover:text-blue-900" title="Ship"
@@ -402,7 +402,7 @@ export default function Admin() {
                     </button>
                     <button 
                       onClick={() => {
-                        const tracking = window.prompt("Enter Tracking Number:");
+                        const tracking = window.prompt("Enter tracking number:");
                         if (tracking) updateOrderStatus(order.id, 'shipped', tracking);
                       }}
                       className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-stone-50 text-stone-400 hover:bg-blue-500 hover:text-white transition-all shadow-sm"
@@ -439,7 +439,7 @@ export default function Admin() {
                     </>
                   )}
                 </select>
-                <input type="number" placeholder="Stock Qty" className="p-4 rounded-xl border border-stone-100 focus:outline-brand-primary" value={newProduct.stockQuantity} onChange={e => setNewProduct({...newProduct, stockQuantity: Number(e.target.value)})} />
+                <input type="number" placeholder="Stock quantity" className="p-4 rounded-xl border border-stone-100 focus:outline-brand-primary" value={newProduct.stockQuantity} onChange={e => setNewProduct({...newProduct, stockQuantity: Number(e.target.value)})} />
                 <input type="text" placeholder="Tags (comma separated)" className="p-4 rounded-xl border border-stone-100 focus:outline-brand-primary" value={newProduct.tags} onChange={e => setNewProduct({...newProduct, tags: e.target.value})} />
                 <div className="md:col-span-1 flex flex-col gap-2">
                   <input type="text" placeholder="Stock Image URL" className="p-4 rounded-xl border border-stone-100 focus:outline-brand-primary" value={newProduct.image} onChange={e => setNewProduct({...newProduct, image: e.target.value})} />
@@ -457,9 +457,9 @@ export default function Admin() {
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                     <input type="text" placeholder="Variation Name (e.g. Oak)" className="p-3 bg-white rounded-xl border border-stone-100 text-sm" value={variationInput.name} onChange={e => setVariationInput({...variationInput, name: e.target.value})} />
-                    <input type="number" placeholder="Var. Price (KSH)" className="p-3 bg-white rounded-xl border border-stone-100 text-sm" value={variationInput.price} onChange={e => setVariationInput({...variationInput, price: Number(e.target.value)})} />
+                    <input type="number" placeholder="Variation price (KSH)" className="p-3 bg-white rounded-xl border border-stone-100 text-sm" value={variationInput.price} onChange={e => setVariationInput({...variationInput, price: Number(e.target.value)})} />
                     <div className="flex flex-col gap-1">
-                      <input type="text" placeholder="Var. Image URL" className="p-3 bg-white rounded-xl border border-stone-100 text-sm" value={variationInput.image} onChange={e => setVariationInput({...variationInput, image: e.target.value})} />
+                      <input type="text" placeholder="Variation image URL" className="p-3 bg-white rounded-xl border border-stone-100 text-sm" value={variationInput.image} onChange={e => setVariationInput({...variationInput, image: e.target.value})} />
                       <input type="file" className="text-[8px] text-stone-400" accept="image/*" onChange={e => handleFileUpload(e, 'variation')} />
                     </div>
                     <button onClick={addVariation} className="bg-stone-900 text-white p-3 rounded-xl font-bold text-sm tracking-widest uppercase hover:bg-brand-primary transition-all">
@@ -719,8 +719,8 @@ export default function Admin() {
                       <Sparkles size={24} />
                     </div>
                     <div>
-                      <h3 className="text-2xl font-serif">Strategy <span className="italic">Analysis</span></h3>
-                      <p className="text-xs text-stone-400 uppercase tracking-widest">Powered by Gemini Creative Intelligence</p>
+                      <h3 className="text-2xl font-serif">Store <span className="italic">Insights</span></h3>
+                      <p className="text-xs text-stone-400 uppercase tracking-widest">Based on orders and catalog activity</p>
                     </div>
                   </div>
                   <button 
@@ -741,12 +741,12 @@ export default function Admin() {
                   <div className="py-24 text-center">
                     <Sparkles size={48} className="mx-auto text-stone-200 mb-6 animate-pulse" />
                     <h4 className="text-xl font-serif text-stone-400">Ready for growth?</h4>
-                    <p className="text-stone-300 max-w-md mx-auto mt-2 text-sm leading-relaxed">Generate a custom business strategy based on your current catalog performance and artisanal trends.</p>
+                    <p className="text-stone-300 max-w-md mx-auto mt-2 text-sm leading-relaxed">Create practical store insights from your current orders and catalog activity.</p>
                     <button 
                       onClick={generateInsights}
                       className="mt-8 bg-stone-900 text-white px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-brand-primary transition-all shadow-xl shadow-stone-900/10"
                     >
-                      Initialize Analysis
+                      Create insights
                     </button>
                   </div>
                 )}

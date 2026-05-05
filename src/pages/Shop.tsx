@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { Fragment, useState, useEffect } from 'react';
 import { ShoppingBag, Star, Plus, MapPin, Package, Heart, Info, Minus, Check, Search, SlidersHorizontal, ShieldCheck, Store, Sparkles, ArrowRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
@@ -320,7 +320,7 @@ export default function Shop() {
         productId: product.id,
         metadata: { source: 'shop-request', category: product.category, price: product.price }
       }).catch(() => undefined);
-      toast.success("Request sent. Checkout from cart when you are ready to pay.");
+      toast.success("Added to your requests. Checkout from cart when you are ready to pay.");
       setSelectedProduct(null);
     } catch (error) {
       console.error(error);
@@ -329,28 +329,28 @@ export default function Shop() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-16">
-      <div className="mb-8 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+    <div className="max-w-7xl mx-auto px-3 py-8 sm:px-4 md:py-16">
+      <div className="mb-6 flex flex-col gap-4 md:mb-8 md:flex-row md:items-end md:justify-between">
         <div className="max-w-3xl">
           <div className="mb-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">
-            <SlidersHorizontal size={14} /> Discover and compare
+            <SlidersHorizontal size={14} /> Shop and compare
           </div>
-          <h1 className="text-5xl md:text-7xl mb-4">Find the <span className="italic font-light">best option</span></h1>
-          <p className="max-w-2xl text-stone-500">Filter quickly, compare products visibly, and open details only when an item looks worth your time.</p>
+          <h1 className="mb-3 text-4xl leading-none md:mb-4 md:text-7xl">Find the <span className="italic font-light">best option</span></h1>
+          <p className="max-w-2xl text-stone-500">Filter by style, price, and category, then compare the pieces that fit your home or gift list.</p>
         </div>
         <Link to="/analyzer" className="inline-flex items-center gap-2 rounded-full border border-stone-200 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-stone-600 hover:border-brand-primary hover:text-brand-primary">
-          Improve recommendations <Sparkles size={14} />
+          Personalize ideas <Sparkles size={14} />
         </Link>
       </div>
 
-      <div className="sticky top-20 z-40 mb-12 rounded-[28px] border border-stone-100 bg-brand-cream/95 p-3 backdrop-blur-xl shadow-sm">
+      <div className="sticky top-16 z-40 mb-8 rounded-[24px] border border-stone-100 bg-brand-cream/95 p-2 backdrop-blur-xl shadow-sm md:top-20 md:mb-12 md:rounded-[28px] md:p-3">
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_auto_auto_auto] xl:items-center">
           <div className="flex min-h-12 items-center gap-3 rounded-2xl bg-white px-4">
             <Search size={18} className="text-stone-400" />
             <input
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search by product, style, category..."
+              placeholder="Search products..."
               className="w-full bg-transparent text-sm font-semibold outline-none placeholder:text-stone-400"
             />
           </div>
@@ -391,15 +391,15 @@ export default function Shop() {
             ))}
           </div>
         </div>
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 px-1 text-[10px] font-black uppercase tracking-widest text-stone-400">
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 px-1 text-[9px] font-black uppercase tracking-widest text-stone-400 md:mt-3 md:text-[10px]">
           <span>{filteredProducts.length} result{filteredProducts.length === 1 ? '' : 's'} in {activeCategory} · sorted by {sortMode}</span>
           <span className="inline-flex items-center gap-2"><MapPin size={13} /> Nairobi availability shown on details</span>
         </div>
       </div>
 
       {(preferences.styles.length > 0 || preferences.colors.length > 0 || preferences.layouts.length > 0) && (
-        <div className="mb-10 flex flex-wrap items-center gap-3 border-y border-brand-primary/10 py-4">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-primary">Ranked by analyzer</span>
+        <div className="mb-8 flex gap-2 overflow-x-auto border-y border-brand-primary/10 py-3 scrollbar-hide md:mb-10 md:flex-wrap md:gap-3 md:py-4">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-primary">Personalized for you</span>
           {[...preferences.styles, ...preferences.colors, ...preferences.layouts].slice(0, 6).map(term => (
             <span key={term} className="rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-stone-500 border border-stone-100">
               {term}
@@ -409,7 +409,7 @@ export default function Shop() {
       )}
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
+        <div className="grid grid-cols-1 gap-y-10 md:grid-cols-2 md:gap-x-8 md:gap-y-16 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map(item => (
             <div key={item} className="animate-pulse">
               <div className="aspect-[4/5] rounded-[40px] bg-white" />
@@ -451,12 +451,12 @@ export default function Shop() {
               className="group cursor-pointer"
               onClick={() => handleProductClick(product)}
             >
-              <div className="aspect-[4/5] rounded-[40px] overflow-hidden bg-stone-100 relative mb-6">
+                <div className="aspect-[4/5] rounded-[28px] overflow-hidden bg-stone-100 relative mb-4 md:mb-6 md:rounded-[40px]">
                 <motion.img 
                   src={product.image} 
                   alt={product.name} 
-                  whileHover={{ scale: 1.15 }}
-                  transition={{ duration: 0.8 }}
+                    whileHover={{ scale: 1.06 }}
+                    transition={{ duration: 0.45 }}
                   className="w-full h-full object-cover origin-center"
                   referrerPolicy="no-referrer"
                 />
@@ -476,7 +476,7 @@ export default function Shop() {
 
                 <label
                   onClick={(e) => handleToggleCompare(e, product)}
-                  className={`absolute left-6 top-6 z-20 flex cursor-pointer items-center gap-2 rounded-full px-3 py-2 text-[9px] font-black uppercase tracking-widest shadow-sm backdrop-blur-md transition-all ${compareIds.includes(product.id) ? 'bg-brand-primary text-brand-cream' : 'bg-white/90 text-stone-600 hover:text-brand-primary'}`}
+                  className={`absolute left-4 top-4 z-20 flex min-h-10 cursor-pointer items-center gap-2 rounded-full px-3 py-2 text-[9px] font-black uppercase tracking-widest shadow-sm backdrop-blur-md transition-all md:left-6 md:top-6 ${compareIds.includes(product.id) ? 'bg-brand-primary text-brand-cream' : 'bg-white/90 text-stone-600 hover:text-brand-primary'}`}
                 >
                   <span className={`flex h-4 w-4 items-center justify-center rounded border ${compareIds.includes(product.id) ? 'border-brand-cream bg-brand-cream text-brand-primary' : 'border-stone-300'}`}>
                     {compareIds.includes(product.id) && <Check size={10} />}
@@ -484,44 +484,44 @@ export default function Shop() {
                   Compare
                 </label>
 
-                <div className="absolute top-6 right-6 flex flex-col gap-2 z-10">
+                <div className="absolute top-4 right-4 flex flex-col gap-2 z-10 md:top-6 md:right-6">
                   <button
                     onClick={(e) => handleToggleCompare(e, product)}
-                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-sm ${compareIds.includes(product.id) ? 'bg-brand-primary text-brand-cream scale-110' : 'bg-white text-stone-400 hover:text-brand-primary'}`}
+                    className={`hidden h-12 w-12 rounded-full items-center justify-center transition-all shadow-sm sm:flex ${compareIds.includes(product.id) ? 'bg-brand-primary text-brand-cream scale-110' : 'bg-white text-stone-400 hover:text-brand-primary'}`}
                     title="Compare"
                   >
                     {compareIds.includes(product.id) ? <Check size={18} /> : <Info size={18} />}
                   </button>
                   <button 
                     onClick={(e) => handleToggleWishlist(e, product)}
-                    className={`w-12 h-12 rounded-full bg-white flex items-center justify-center transition-all shadow-sm ${wishlist.includes(product.id) ? 'text-red-500 scale-110' : 'text-stone-400 hover:text-red-500'}`}
+                    className={`flex h-11 w-11 items-center justify-center rounded-full bg-white transition-all shadow-sm md:h-12 md:w-12 ${wishlist.includes(product.id) ? 'text-red-500 scale-110' : 'text-stone-400 hover:text-red-500'}`}
                   >
                     <Heart size={20} fill={wishlist.includes(product.id) ? "currentColor" : "none"} />
                   </button>
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleProductClick(product); }}
-                    className="w-12 h-12 rounded-full bg-brand-primary text-brand-cream flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                    className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-primary text-brand-cream shadow-lg transition-transform hover:scale-110 md:h-12 md:w-12"
                   >
                     <Plus size={24} />
                   </button>
                 </div>
-              <div className="absolute top-20 left-6 right-24 flex flex-wrap gap-2">
-                {getProductInsightLabels(product, preferences, idx).map(label => (
+              <div className="absolute bottom-20 left-4 right-4 flex flex-wrap gap-2 md:bottom-auto md:left-6 md:right-24 md:top-20">
+                {getProductInsightLabels(product, preferences, idx).slice(0, 2).map(label => (
                   <span key={label} className="bg-white/85 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest text-stone-600 shadow-sm">
                     {label}
                   </span>
                 ))}
               </div>
-              <div className="absolute bottom-6 left-6 right-6">
-                <div className="bg-white/80 backdrop-blur-md p-4 rounded-2xl flex justify-between items-center shadow-sm">
-                  <span className="font-bold text-lg">KSH {product.price}</span>
+              <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-6">
+                <div className="bg-white/85 backdrop-blur-md p-3 rounded-2xl flex justify-between items-center shadow-sm md:p-4">
+                  <span className="font-bold text-base md:text-lg">KSH {product.price}</span>
                   <div className="flex items-center gap-1 text-xs font-bold text-brand-primary">
                     <Star size={14} fill="#5A5A40" /> {product.rating}
                   </div>
                 </div>
               </div>
             </div>
-            <h3 className="text-2xl mb-1">{product.name}</h3>
+            <h3 className="text-xl mb-1 md:text-2xl">{product.name}</h3>
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-stone-400 text-sm font-medium uppercase tracking-widest">{product.category}</p>
@@ -541,7 +541,7 @@ export default function Shop() {
 
       <AnimatePresence>
         {isCompareOpen && comparedProducts.length >= 2 && (
-          <div className="fixed inset-0 z-[85] flex items-end justify-center p-4 md:items-center">
+          <div className="fixed inset-0 z-[85] flex items-end justify-center p-2 md:items-center md:p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -553,12 +553,12 @@ export default function Shop() {
               initial={{ opacity: 0, y: 28, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 28, scale: 0.98 }}
-              className="relative z-10 max-h-[88vh] w-full max-w-6xl overflow-hidden rounded-[36px] bg-white shadow-2xl"
+              className="relative z-10 max-h-[86svh] w-full max-w-6xl overflow-hidden rounded-t-[32px] bg-white shadow-2xl md:max-h-[88vh] md:rounded-[36px]"
             >
-              <div className="flex items-start justify-between gap-6 border-b border-stone-100 p-6">
+              <div className="flex items-start justify-between gap-4 border-b border-stone-100 p-4 md:gap-6 md:p-6">
                 <div>
                   <div className="mb-2 text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">Compare options</div>
-                  <h2 className="text-3xl font-serif">Choose with less guessing.</h2>
+                  <h2 className="text-2xl font-serif md:text-3xl">Choose with less guessing.</h2>
                   <p className="mt-2 max-w-2xl text-sm text-stone-500">Side-by-side price, rating, availability, and fit cues from the selected products.</p>
                 </div>
                 <button
@@ -569,7 +569,7 @@ export default function Shop() {
                 </button>
               </div>
 
-              <div className="grid gap-4 border-b border-stone-100 p-6 md:grid-cols-2">
+              <div className="grid gap-3 border-b border-stone-100 p-4 md:grid-cols-2 md:gap-4 md:p-6">
                 {bestValueProduct && (
                   <div className="rounded-3xl bg-brand-primary/5 p-5">
                     <div className="text-[10px] font-black uppercase tracking-widest text-brand-primary">Best for value</div>
@@ -589,14 +589,14 @@ export default function Shop() {
                       <img src={(bestQualityProduct as any).image} alt={(bestQualityProduct as any).name} className="h-14 w-14 rounded-2xl object-cover" referrerPolicy="no-referrer" />
                       <div>
                         <div className="font-bold text-stone-900">{(bestQualityProduct as any).name}</div>
-                        <div className="text-xs text-stone-500">Highest rating and availability signal.</div>
+                        <div className="text-xs text-stone-500">Highest rating with strong availability.</div>
                       </div>
                     </div>
                   </div>
                 )}
               </div>
 
-              <div className="overflow-auto p-6">
+              <div className="overflow-auto p-4 md:p-6">
                 <div className="min-w-[760px]">
                   <div className="grid gap-3" style={{ gridTemplateColumns: `160px repeat(${comparedProducts.length}, minmax(150px, 1fr))` }}>
                     <div />
@@ -625,7 +625,7 @@ export default function Shop() {
                       ['Location', (product: any) => getProductLocation(product)],
                       ['Key difference', (product: any, index: number) => getProductInsightLabels(product, preferences, index)[0]],
                     ].map(([label, resolver]) => (
-                      <>
+                      <Fragment key={label as string}>
                         <div key={`${label}-label`} className="rounded-2xl bg-stone-900 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white">
                           {label as string}
                         </div>
@@ -634,7 +634,7 @@ export default function Shop() {
                             {(resolver as (product: any, index: number) => string)(product, index)}
                           </div>
                         ))}
-                      </>
+                      </Fragment>
                     ))}
                   </div>
                 </div>
@@ -648,19 +648,19 @@ export default function Shop() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 30 }}
-            className="fixed bottom-6 left-1/2 z-[70] w-[calc(100%-2rem)] max-w-4xl -translate-x-1/2 rounded-3xl bg-stone-900 text-white shadow-2xl"
+          className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] left-1/2 z-[70] w-[calc(100%-1rem)] max-w-4xl -translate-x-1/2 rounded-3xl bg-stone-900 text-white shadow-2xl lg:bottom-6 lg:w-[calc(100%-2rem)]"
           >
-            <div className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-3 p-3 md:flex-row md:items-center md:justify-between md:p-4">
               <div>
                 <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Comparison set</div>
                 <div className="mt-1 text-sm font-bold">Compare ({comparedProducts.length}) product{comparedProducts.length === 1 ? '' : 's'} selected</div>
               </div>
-              <div className="flex min-w-0 flex-1 gap-3 overflow-x-auto md:justify-end">
+              <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto scrollbar-hide md:justify-end md:gap-3">
                 {comparedProducts.map((product: any) => (
                   <button
                     key={product.id}
                     onClick={(e) => handleToggleCompare(e, product)}
-                    className="flex min-w-[180px] items-center gap-3 rounded-2xl bg-white/10 p-2 text-left hover:bg-white/15"
+                    className="flex min-w-[150px] items-center gap-3 rounded-2xl bg-white/10 p-2 text-left hover:bg-white/15 md:min-w-[180px]"
                   >
                     <img src={product.image} alt={product.name} className="h-12 w-12 rounded-xl object-cover" referrerPolicy="no-referrer" />
                     <div className="min-w-0">
@@ -694,7 +694,7 @@ export default function Shop() {
       {/* Product Detail Modal */}
       <AnimatePresence>
         {selectedProduct && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[60] flex items-end justify-center p-0 md:items-center md:p-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -706,9 +706,9 @@ export default function Shop() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-brand-cream w-full max-w-5xl rounded-[40px] overflow-hidden flex flex-col md:flex-row relative z-10 shadow-2xl max-h-[90vh]"
+              className="bg-brand-cream w-full max-w-5xl overflow-hidden rounded-t-[32px] flex flex-col md:flex-row relative z-10 shadow-2xl max-h-[92svh] md:max-h-[90vh] md:rounded-[40px]"
             >
-              <div className="md:w-1/2 overflow-hidden relative cursor-zoom-in group/image bg-stone-100" onClick={() => setIsZoomed(!isZoomed)}>
+              <div className="h-[34svh] overflow-hidden relative cursor-zoom-in group/image bg-stone-100 md:h-auto md:w-1/2" onClick={() => setIsZoomed(!isZoomed)}>
                 <motion.img 
                   key={selectedColor}
                   initial={{ opacity: 0.8, scale: 1.1 }}
@@ -716,7 +716,7 @@ export default function Shop() {
                   src={selectedProduct.variations?.find((v: any) => v.name === selectedColor)?.image || selectedProduct.image} 
                   alt={selectedProduct.name} 
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  className="w-full h-full object-cover origin-center max-h-[50vh] md:max-h-full" 
+                  className="w-full h-full object-cover origin-center"
                   referrerPolicy="no-referrer" 
                 />
                 <div className={`absolute inset-0 bg-black/10 backdrop-blur-[2px] pointer-events-none transition-opacity duration-300 ${isZoomed ? 'opacity-100' : 'opacity-0'}`} />
@@ -738,7 +738,7 @@ export default function Shop() {
                   </div>
                 )}
               </div>
-              <div className="md:w-1/2 p-8 md:p-12 flex flex-col overflow-y-auto scroll-smooth custom-scrollbar relative max-h-full">
+              <div className="flex max-h-[58svh] flex-col overflow-y-auto scroll-smooth p-5 custom-scrollbar relative md:max-h-full md:w-1/2 md:p-12">
                 <button 
                   onClick={() => setSelectedProduct(null)}
                   className="sticky top-0 ml-auto p-3 text-stone-300 hover:text-brand-primary hover:bg-stone-50 rounded-full transition-all z-20 bg-white/80 backdrop-blur-md shadow-sm mb-4"
@@ -750,12 +750,12 @@ export default function Shop() {
                   <Package size={12} /> Product detail
                 </div>
                 
-                <h2 className="text-4xl md:text-5xl font-serif mb-6 leading-tight">{selectedProduct.name}</h2>
+                <h2 className="mb-5 text-3xl font-serif leading-tight md:mb-6 md:text-5xl">{selectedProduct.name}</h2>
                 
-                <div className="flex items-center gap-6 mb-8 border-b border-stone-100 pb-8">
+                <div className="mb-6 flex items-center gap-5 border-b border-stone-100 pb-6 md:mb-8 md:gap-6 md:pb-8">
                   <div>
                     <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest block mb-1">Price</span>
-                    <span className="text-3xl font-bold text-brand-primary font-mono">
+                    <span className="text-2xl font-bold text-brand-primary font-mono md:text-3xl">
                       KSH {selectedProduct.variations?.find((v: any) => v.name === selectedColor)?.price || selectedProduct.price}
                     </span>
                   </div>
@@ -770,7 +770,7 @@ export default function Shop() {
                   </div>
                 </div>
 
-                <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3 md:mb-8">
                   <div className="rounded-2xl bg-white p-4 border border-stone-100">
                     <Store size={18} className="mb-3 text-brand-primary" />
                     <span className="block text-[10px] font-black uppercase tracking-widest text-stone-400">Seller</span>
@@ -862,7 +862,7 @@ export default function Shop() {
                 {/* Prominent Add to Cart for Modal */}
                 <button 
                   onClick={() => handleAddToCart(selectedProduct)}
-                  className="w-full bg-brand-primary text-brand-cream py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 hover:scale-[1.02] transition-transform shadow-xl shadow-brand-primary/20 mb-8"
+                  className="mb-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-brand-primary py-4 text-base font-bold text-brand-cream shadow-xl shadow-brand-primary/20 transition-transform hover:scale-[1.02] md:mb-8 md:py-5 md:text-lg"
                 >
                   <ShoppingBag size={24} /> Add to Cart
                 </button>
@@ -963,17 +963,17 @@ export default function Shop() {
                       onClick={() => handleAddToCart(selectedProduct)}
                       className="bg-stone-100 text-stone-900 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 hover:bg-stone-200 transition-colors"
                     >
-                      <Plus size={20} /> Intent
+                      <Plus size={20} /> Add to cart
                     </button>
                     <button 
                       onClick={() => handleOrder(selectedProduct)}
                       className="bg-brand-primary text-brand-cream py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shadow-lg shadow-brand-primary/20"
                     >
-                      <ShoppingBag size={20} /> Request
+                      <ShoppingBag size={20} /> Request order
                     </button>
                   </div>
                   <button className="w-full border border-stone-200 text-stone-600 py-4 rounded-2xl font-bold hover:bg-stone-50 transition-colors">
-                    Custom Request
+                    Ask for a custom option
                   </button>
                 </div>
               </div>

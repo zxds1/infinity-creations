@@ -215,7 +215,7 @@ export default function Cart() {
         eventType: 'payment_attempted',
         metadata: { orderId: result.orderId, paymentMethod, total: result.amounts.total }
       }).catch(() => undefined);
-      toast.success("Order created. Complete payment using the verified instructions.");
+      toast.success("Order created. Complete payment with the details shown.");
     } catch (error) {
       trackEvent({ eventType: 'payment_failed', metadata: { reason: error instanceof Error ? error.message : 'checkout-failed' } }).catch(() => undefined);
       toast.error("Checkout failed. Please review your cart.");
@@ -228,9 +228,9 @@ export default function Cart() {
 
   if (authReady && !user) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-24 text-center">
+      <div className="max-w-4xl mx-auto px-4 py-16 text-center md:py-24">
         <ShoppingBag size={64} className="text-stone-200 mx-auto mb-6" />
-        <h1 className="text-4xl mb-6">Sign in to review your intent list</h1>
+        <h1 className="text-4xl mb-6">Sign in to view your cart</h1>
         <Link to="/" className="bg-brand-primary text-brand-cream px-8 py-4 rounded-2xl font-bold uppercase tracking-widest text-xs">
           Start Exploring
         </Link>
@@ -239,10 +239,10 @@ export default function Cart() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-16">
-      <div className="mb-12">
-        <h1 className="text-5xl md:text-7xl mb-4 italic font-light">Secure <span className="font-serif not-italic">Checkout</span></h1>
-        <p className="text-stone-500">Review items, confirm delivery details, then pay through a server-verified order.</p>
+    <div className="max-w-6xl mx-auto px-3 py-8 sm:px-4 md:py-16">
+      <div className="mb-8 md:mb-12">
+        <h1 className="mb-3 text-4xl italic font-light leading-none md:mb-4 md:text-7xl">Secure <span className="font-serif not-italic">Checkout</span></h1>
+        <p className="text-stone-500">Review your items, confirm delivery details, then choose how you want to pay.</p>
       </div>
 
       {loading ? (
@@ -250,20 +250,20 @@ export default function Cart() {
           <div className="w-12 h-12 rounded-full border-2 border-brand-primary/10 border-t-brand-primary animate-spin" />
         </div>
       ) : items.length === 0 ? (
-        <div className="bg-white rounded-[40px] p-24 text-center border border-brand-primary/5">
+        <div className="bg-white rounded-[32px] p-10 text-center border border-brand-primary/5 md:rounded-[40px] md:p-24">
           <div className="w-20 h-20 rounded-full bg-stone-50 flex items-center justify-center mx-auto mb-6 text-stone-300">
             <ShoppingBag size={40} />
           </div>
-          <h3 className="text-2xl mb-2 font-serif">No confirmed intent yet</h3>
-          <p className="text-stone-400 mb-8">Compare products or save items to help us understand what you are considering.</p>
+          <h3 className="text-2xl mb-2 font-serif">Your cart is empty</h3>
+          <p className="text-stone-400 mb-8">Add pieces you love, then come back here when you are ready to checkout.</p>
           <Link to="/shop" className="text-brand-primary font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:gap-4 transition-all">
-            Browse signals <ArrowRight size={16} />
+            Browse products <ArrowRight size={16} />
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-12">
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-[32px] p-4 border border-brand-primary/5">
+            <div className="sticky top-16 z-30 bg-white rounded-[24px] p-2 border border-brand-primary/5 md:rounded-[32px] md:p-4 lg:static">
               <div className="grid grid-cols-3 gap-2">
                 {[
                   { id: 'review', label: 'Review', icon: ShoppingBag },
@@ -276,7 +276,7 @@ export default function Cart() {
                     <button
                       key={step.id}
                       onClick={() => setCheckoutStep(step.id as typeof checkoutStep)}
-                      className={`flex items-center justify-center gap-2 rounded-2xl px-3 py-4 text-[10px] font-black uppercase tracking-widest transition-all ${active ? 'bg-brand-primary text-brand-cream' : 'bg-stone-50 text-stone-400 hover:text-brand-primary'}`}
+                      className={`flex min-h-12 items-center justify-center gap-1 rounded-2xl px-2 py-3 text-[9px] font-black uppercase tracking-widest transition-all md:gap-2 md:px-3 md:py-4 md:text-[10px] ${active ? 'bg-brand-primary text-brand-cream' : 'bg-stone-50 text-stone-400 hover:text-brand-primary'}`}
                     >
                       <StepIcon size={16} />
                       {step.label}
@@ -290,8 +290,8 @@ export default function Cart() {
               {checkoutStep === 'review' && (
                 <motion.div key="review" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
                   {items.map((item) => (
-                    <div key={item.id} className="bg-white rounded-[32px] p-6 border border-brand-primary/5 flex flex-col md:flex-row gap-6">
-                      <div className="w-full md:w-32 aspect-square rounded-2xl overflow-hidden bg-stone-100 shrink-0">
+                    <div key={item.id} className="bg-white rounded-[28px] p-4 border border-brand-primary/5 flex flex-col gap-4 md:flex-row md:gap-6 md:rounded-[32px] md:p-6">
+                      <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden bg-stone-100 shrink-0 md:w-32 md:aspect-square">
                         <img src={item.image} alt={item.productName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       </div>
 
@@ -330,9 +330,9 @@ export default function Cart() {
               )}
 
               {checkoutStep === 'delivery' && (
-                <motion.div key="delivery" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="bg-white rounded-[32px] p-8 border border-brand-primary/5 space-y-8">
+                <motion.div key="delivery" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="bg-white rounded-[28px] p-5 border border-brand-primary/5 space-y-6 md:rounded-[32px] md:p-8 md:space-y-8">
                   <div>
-                    <h2 className="text-3xl font-serif mb-2">Delivery and contact</h2>
+                    <h2 className="text-2xl font-serif mb-2 md:text-3xl">Delivery and contact</h2>
                     <p className="text-sm text-stone-400">Maridadi uses this for payment confirmation, delivery coordination, and support.</p>
                   </div>
 
@@ -381,7 +381,7 @@ export default function Cart() {
                     <div className="rounded-2xl bg-stone-50 p-5 md:col-span-3">
                       <ShieldCheck size={20} className="text-brand-primary mb-3" />
                       <h3 className="font-bold text-sm">Secure checkout</h3>
-                      <p className="text-xs text-stone-400 mt-1">The backend recalculates item prices, delivery fee, and total before payment instructions are issued.</p>
+                      <p className="text-xs text-stone-400 mt-1">Your item prices, delivery fee, and total are confirmed before payment.</p>
                     </div>
                   </div>
 
@@ -392,10 +392,10 @@ export default function Cart() {
               )}
 
               {checkoutStep === 'payment' && (
-                <motion.div key="payment" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="bg-white rounded-[32px] p-8 border border-brand-primary/5 space-y-8">
+                <motion.div key="payment" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="bg-white rounded-[28px] p-5 border border-brand-primary/5 space-y-6 md:rounded-[32px] md:p-8 md:space-y-8">
                   <div>
-                    <h2 className="text-3xl font-serif mb-2">Payment</h2>
-                    <p className="text-sm text-stone-400">The backend recalculates your cart before creating an order. The client total is display-only.</p>
+                    <h2 className="text-2xl font-serif mb-2 md:text-3xl">Payment</h2>
+                    <p className="text-sm text-stone-400">We confirm your cart total before creating your order.</p>
                   </div>
 
                   <div className="rounded-3xl border border-stone-100 bg-stone-50 p-6">
@@ -438,8 +438,8 @@ export default function Cart() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[
-                      { id: 'mpesa', label: 'M-Pesa', description: 'STK push callback verified' },
-                      { id: 'card', label: 'Card', description: 'Provider callback verified' }
+                      { id: 'mpesa', label: 'M-Pesa', description: 'Pay with a secure phone prompt' },
+                      { id: 'card', label: 'Card', description: 'Pay securely by card' }
                     ].map(method => (
                       <button
                         key={method.id}
@@ -458,7 +458,7 @@ export default function Cart() {
                       <div className="flex items-start gap-4">
                         <ShieldCheck size={28} className="text-brand-primary shrink-0" />
                         <div>
-                          <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary mb-1">Server verified order</p>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary mb-1">Order ready for payment</p>
                           <h3 className="font-bold text-lg">{checkoutResult.paymentInstructions.title}</h3>
                           <p className="text-sm text-stone-600 mt-2">{checkoutResult.paymentInstructions.message}</p>
                           <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
@@ -482,7 +482,7 @@ export default function Cart() {
                           <div className="mt-5 rounded-2xl bg-white p-4">
                             <p className="text-sm font-bold text-stone-900">What happens next</p>
                             <p className="mt-1 text-xs leading-relaxed text-stone-500">
-                              After provider callback verification, the order moves from pending payment to paid, then processing. Track status from Activity.
+                              After payment is confirmed, your order moves to processing. You can track every update from Activity.
                             </p>
                             <Link to="/orders" className="mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-primary">
                               Track in Activity <ArrowRight size={14} />
@@ -499,7 +499,7 @@ export default function Cart() {
                     className="w-full bg-brand-primary text-brand-cream py-5 rounded-2xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:scale-[1.01] transition-transform disabled:opacity-60"
                   >
                     <CreditCard size={18} />
-                    {processingCheckout ? 'Creating verified order...' : 'Create order and start payment'}
+                    {processingCheckout ? 'Creating your order...' : 'Create order and start payment'}
                   </button>
                 </motion.div>
               )}
@@ -507,7 +507,7 @@ export default function Cart() {
           </div>
 
           <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white rounded-[40px] p-8 border border-stone-100 shadow-sm">
+            <div className="bg-white rounded-[28px] p-5 border border-stone-100 shadow-sm md:rounded-[40px] md:p-8">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-serif italic">My Addresses</h3>
                 <button 
@@ -560,8 +560,8 @@ export default function Cart() {
               </div>
             </div>
 
-            <div className="bg-brand-primary text-brand-cream rounded-[40px] p-8 sticky top-8 shadow-2xl">
-              <h2 className="text-3xl font-serif mb-8 italic">Checkout Summary</h2>
+            <div className="bg-brand-primary text-brand-cream rounded-[28px] p-5 shadow-2xl lg:sticky lg:top-8 md:rounded-[40px] md:p-8">
+              <h2 className="text-2xl font-serif mb-6 italic md:mb-8 md:text-3xl">Checkout Summary</h2>
               
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between text-white/60 text-sm">
@@ -587,7 +587,7 @@ export default function Cart() {
               </button>
               
               <p className="text-[10px] text-white/40 mt-6 text-center italic">
-                Final total is recalculated by the backend before payment starts.
+                Your final total is confirmed before payment starts.
               </p>
             </div>
           </div>

@@ -10,11 +10,33 @@
 }
 
 @layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
     @apply font-sans bg-brand-cream text-stone-900;
   }
   
   h1, h2, h3, h4 {
     @apply font-serif;
+  }
+}
+
+@layer utilities {
+  .pb-mobile-nav {
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+  }
+
+  .bottom-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .scrollbar-hide {
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }

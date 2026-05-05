@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { auth, db, doc, getDocFromServer, signInWithGoogle } from '../lib/firebase';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
-import { Camera, Home, ShoppingBag, Paintbrush, User as UserIcon, LogOut, Menu, X, Facebook, Instagram, Twitter, ChevronRight, Settings, Heart } from 'lucide-react';
+import { Camera, ShoppingBag, Paintbrush, User as UserIcon, LogOut, X, Facebook, Instagram, Twitter, ChevronRight, Settings, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function Sidebar() {
@@ -32,11 +32,13 @@ export default function Sidebar() {
   const navItems = [
     { name: 'Discover', path: '/shop', icon: ShoppingBag },
     { name: 'Design', path: '/analyzer', icon: Camera },
-    { name: 'Activity', path: '/orders', icon: UserIcon },
-    { name: 'Account', path: '/wishlist', icon: Heart },
+    { name: 'Saved', path: '/wishlist', icon: Heart },
     { name: 'Cart', path: '/cart', icon: ShoppingBag },
+    { name: 'Activity', path: '/orders', icon: UserIcon },
     { name: 'Branding', path: '/branding', icon: Paintbrush },
   ];
+
+  const mobileNavItems = navItems.slice(0, 5);
 
   const sidebarVariants = {
     expanded: { width: '280px' },
@@ -45,13 +47,23 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile Toggle - Improved Premium Design */}
-      <button 
-        onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="lg:hidden fixed top-4 right-6 z-[100] w-12 h-12 bg-white/80 backdrop-blur-xl border border-stone-100 text-brand-primary rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300"
-      >
-        <ChevronRight size={20} className={`transition-transform duration-500 ${isMobileOpen ? 'rotate-180' : ''}`} />
-      </button>
+      <nav className="bottom-safe fixed inset-x-0 bottom-0 z-[75] border-t border-stone-100 bg-white/95 px-2 pt-2 shadow-2xl shadow-stone-900/10 backdrop-blur-xl lg:hidden">
+        <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
+          {mobileNavItems.map((item) => {
+            const active = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-colors ${active ? 'bg-brand-primary text-brand-cream' : 'text-stone-400'}`}
+              >
+                <item.icon size={20} />
+                <span>{item.name}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
 
       {/* Desktop Sidebar Toggle Tab */}
       {!isExpanded && (
@@ -188,74 +200,6 @@ export default function Sidebar() {
         </div>
       </motion.aside>
 
-      {/* Mobile Sidebar Overlay */}
-      <AnimatePresence>
-        {isMobileOpen && (
-          <>
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsMobileOpen(false)}
-              className="lg:hidden fixed inset-0 z-[80] bg-stone-900/60 backdrop-blur-sm"
-            />
-            <motion.aside
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              className="lg:hidden fixed left-0 top-0 bottom-0 w-[280px] z-[90] bg-white p-6 flex flex-col"
-            >
-              <div className="flex items-center gap-3 mb-12">
-                <div className="w-10 h-10 bg-brand-primary rounded-xl flex items-center justify-center text-brand-cream font-serif text-xl italic">M</div>
-                <span className="font-serif text-xl font-semibold tracking-tight text-brand-primary">Maridadi</span>
-              </div>
-
-              <nav className="flex-1 space-y-4 overflow-y-auto scrollbar-hide py-4">
-                {navItems.map((item) => (
-                  <Link 
-                    key={item.path}
-                    to={item.path}
-                    onClick={() => setIsMobileOpen(false)}
-                    className={`flex items-center gap-4 p-4 rounded-2xl transition-all ${location.pathname === item.path ? 'bg-brand-primary text-brand-cream' : 'text-stone-400'}`}
-                  >
-                    <item.icon size={24} />
-                    <span className="font-bold text-sm tracking-widest uppercase">{item.name}</span>
-                  </Link>
-                ))}
-
-                {isAdmin && (
-                  <Link
-                    to="/admin"
-                    onClick={() => setIsMobileOpen(false)}
-                    className={`flex items-center gap-4 p-4 rounded-2xl transition-all ${location.pathname === '/admin' ? 'bg-stone-900 text-white' : 'text-stone-400'}`}
-                  >
-                    <Settings size={24} />
-                    <span className="font-bold text-sm tracking-widest uppercase">Admin Panel</span>
-                  </Link>
-                )}
-              </nav>
-
-              <div className="mt-auto">
-                {user ? (
-                  <button 
-                    onClick={() => { signOut(auth); setIsMobileOpen(false); }}
-                    className="w-full flex items-center gap-4 p-4 rounded-2xl text-red-500 font-bold uppercase tracking-widest text-sm"
-                  >
-                    <LogOut size={24} /> Sign Out
-                  </button>
-                ) : (
-                  <button 
-                    onClick={() => { signInWithGoogle(); setIsMobileOpen(false); }}
-                    className="w-full flex items-center gap-4 p-4 rounded-2xl bg-brand-primary text-brand-cream font-bold uppercase tracking-widest text-sm"
-                  >
-                    <LogOut size={24} className="rotate-180" /> Sign In
-                  </button>
-                )}
-              </div>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
     </>
   );
 }

@@ -115,7 +115,7 @@ export default function Branding() {
         <div>
           <h1 className="text-6xl md:text-8xl mb-8 leading-[0.9]">Transform <br /><span className="italic font-light">Everything</span></h1>
           <p className="text-xl text-stone-500 mb-12 max-w-lg leading-relaxed">
-            Professional branding services that also help Maridadi understand seller demand, positioning, and customer fit.
+            Professional branding for vehicles, fashion labels, signage, and custom business projects.
           </p>
 
           <div className="space-y-4">
@@ -157,12 +157,12 @@ export default function Branding() {
             >
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
               
-              <h2 className="text-4xl mb-4 font-serif">Project Request</h2>
+              <h2 className="text-4xl mb-4 font-serif">Start your project</h2>
               <p className="text-white/70 mb-8">{selectedService.desc || selectedService.description}</p>
 
             <div className="space-y-6">
               <div>
-                <label className="block text-xs font-bold uppercase mb-2 tracking-widest text-white/50">Reference Image (Optional)</label>
+                <label className="block text-xs font-bold uppercase mb-2 tracking-widest text-white/50">Reference image (optional)</label>
                 <div 
                   onClick={() => document.getElementById('branding-upload')?.click()}
                   className="w-full aspect-video rounded-2xl border border-white/20 bg-white/5 flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-colors overflow-hidden"
@@ -172,7 +172,7 @@ export default function Branding() {
                   ) : (
                     <>
                       <ImageIcon className="text-white/30 mb-2" size={32} />
-                      <span className="text-xs text-white/50 font-bold uppercase tracking-widest">Click to Upload reference</span>
+                      <span className="text-xs text-white/50 font-bold uppercase tracking-widest">Upload a reference image</span>
                     </>
                   )}
                   <input id="branding-upload" type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
@@ -180,7 +180,7 @@ export default function Branding() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase mb-2 tracking-widest text-white/50">Your Vision</label>
+                <label className="block text-xs font-bold uppercase mb-2 tracking-widest text-white/50">Your idea</label>
                 <textarea 
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -191,7 +191,7 @@ export default function Branding() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase mb-2 tracking-widest text-white/50">Business Type</label>
+                  <label className="block text-[10px] font-bold uppercase mb-2 tracking-widest text-white/50">Business type</label>
                   <input
                     value={sellerProfile.businessType}
                     onChange={(e) => setSellerProfile({ ...sellerProfile, businessType: e.target.value })}
@@ -209,7 +209,7 @@ export default function Branding() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase mb-2 tracking-widest text-white/50">Target Customers</label>
+                  <label className="block text-[10px] font-bold uppercase mb-2 tracking-widest text-white/50">Customers</label>
                   <input
                     value={sellerProfile.targetCustomers}
                     onChange={(e) => setSellerProfile({ ...sellerProfile, targetCustomers: e.target.value })}
@@ -221,7 +221,7 @@ export default function Branding() {
 
               <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
                 <p className="text-sm text-white/80 leading-relaxed italic">
-                  "After submission, our design team will create a concept mockup based on your description and contact you via your registered email."
+                  After you send the request, our design team will review your brief and contact you with the next step.
                 </p>
               </div>
 
@@ -230,7 +230,7 @@ export default function Branding() {
                 disabled={submitting}
                 className={`w-full bg-white text-brand-primary py-5 rounded-2xl font-bold text-xl flex items-center justify-center gap-3 transition-transform hover:scale-[1.02] ${submitting ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                {submitting ? 'Submitting...' : 'Send Request'} <Send size={20} />
+                {submitting ? 'Sending...' : 'Send project'} <Send size={20} />
               </button>
             </div>
           </motion.div>

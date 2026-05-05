@@ -137,25 +137,25 @@ export default function Orders() {
 
   if (authReady && !user) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-24 text-center">
-        <h1 className="text-4xl mb-6">Sign in to view activity</h1>
-        <p className="text-stone-500">Track confirmed intent, custom requests, and follow-up status here.</p>
+      <div className="max-w-4xl mx-auto px-4 py-16 text-center md:py-24">
+        <h1 className="text-4xl mb-6">Sign in to view your orders</h1>
+        <p className="text-stone-500">Track purchases, custom requests, and delivery updates here.</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-16">
-      <div className="mb-12 flex flex-col gap-8">
+    <div className="max-w-4xl mx-auto px-3 py-8 sm:px-4 md:py-16">
+      <div className="mb-8 flex flex-col gap-6 md:mb-12 md:gap-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h1 className="text-5xl md:text-6xl mb-4">Your <span className="italic font-light">Activity</span></h1>
-            <p className="text-stone-500">Paid orders, payment status, fulfillment progress, and delivery tracking.</p>
+            <h1 className="mb-3 text-4xl leading-none md:mb-4 md:text-6xl">Your <span className="italic font-light">Orders</span></h1>
+            <p className="text-stone-500">Follow payment status, preparation, shipping, and delivery updates.</p>
           </div>
           <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 w-16">Status</span>
-              <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 sm:w-16">Status</span>
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide sm:flex-wrap">
                 {[
                   { label: 'All', value: 'All' },
                   { label: 'Pending Payment', value: 'pending_payment' },
@@ -168,7 +168,7 @@ export default function Orders() {
                   <button
                     key={f.value}
                     onClick={() => setStatusFilter(f.value)}
-                    className={`px-4 py-1 rounded-full text-[10px] font-bold transition-all border ${statusFilter === f.value ? 'bg-brand-primary text-brand-cream border-brand-primary' : 'bg-transparent text-stone-500 border-stone-200 hover:border-brand-primary'}`}
+                    className={`min-h-9 whitespace-nowrap px-4 py-1 rounded-full text-[10px] font-bold transition-all border ${statusFilter === f.value ? 'bg-brand-primary text-brand-cream border-brand-primary' : 'bg-transparent text-stone-500 border-stone-200 hover:border-brand-primary'}`}
                   >
                     {f.label}
                   </button>
@@ -176,7 +176,7 @@ export default function Orders() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 w-16">Type</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 sm:w-16">Type</span>
               <div className="flex flex-wrap gap-2">
                 {['All', 'Checkout'].map(f => (
                   <button
@@ -198,12 +198,12 @@ export default function Orders() {
           <div className="w-12 h-12 rounded-full border-2 border-brand-primary/10 border-t-brand-primary animate-spin" />
         </div>
       ) : filteredOrders.length === 0 ? (
-        <div className="bg-white rounded-[40px] p-24 text-center border border-brand-primary/5">
+        <div className="bg-white rounded-[32px] p-10 text-center border border-brand-primary/5 md:rounded-[40px] md:p-24">
           <div className="w-20 h-20 rounded-full bg-stone-50 flex items-center justify-center mx-auto mb-6 text-stone-300">
             <Package size={40} />
           </div>
-          <h3 className="text-2xl mb-2 font-serif">No {statusFilter !== 'All' ? statusFilter.toLowerCase() : ''} activity yet</h3>
-          <p className="text-stone-400">Start checkout from your cart to create a server-verified order.</p>
+          <h3 className="text-2xl mb-2 font-serif">No {statusFilter !== 'All' ? statusFilter.toLowerCase() : ''} orders yet</h3>
+          <p className="text-stone-400">Start checkout from your cart when you are ready to buy.</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -214,10 +214,10 @@ export default function Orders() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
-                className="bg-white rounded-[32px] p-8 border border-brand-primary/5 hover:shadow-xl hover:shadow-brand-primary/5 transition-all flex flex-col gap-8 cursor-pointer"
+                className="bg-white rounded-[28px] p-5 border border-brand-primary/5 hover:shadow-xl hover:shadow-brand-primary/5 transition-all flex flex-col gap-6 cursor-pointer md:rounded-[32px] md:p-8 md:gap-8"
                 onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
               >
-                <div className="flex flex-col md:flex-row gap-8 items-center">
+                <div className="flex flex-col gap-5 md:flex-row md:gap-8 md:items-center">
                   <div className="w-20 h-20 rounded-2xl bg-brand-cream overflow-hidden flex items-center justify-center shrink-0">
                     {order.type === 'furniture' ? <Package className="text-brand-primary" size={32} /> : <CheckCircle2 className="text-brand-primary" size={32} />}
                   </div>
@@ -312,7 +312,7 @@ export default function Orders() {
                     >
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div>
-                          <h4 className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-4">Activity Details</h4>
+                          <h4 className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-4">Order Details</h4>
                           <div className="bg-stone-50 p-6 rounded-3xl space-y-4">
                             <div className="flex justify-between items-center">
                               <span className="text-sm font-medium text-stone-600">{getOrderTitle(order)}</span>

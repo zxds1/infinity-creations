@@ -76,7 +76,7 @@ export default function Wishlist() {
         price: item.price,
         image: item.image,
         quantity: 1,
-        deliveryAddress: "Standard Address", // Default
+        deliveryAddress: "Delivery address to be confirmed",
         createdAt: serverTimestamp()
       });
       trackEvent({ eventType: 'cart', productId: item.productId, metadata: { source: 'wishlist' } }).catch(() => undefined);
@@ -94,7 +94,7 @@ export default function Wishlist() {
 
   if (!auth.currentUser) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-24 text-center">
+      <div className="max-w-4xl mx-auto px-4 py-16 text-center md:py-24">
         <Heart size={64} className="text-stone-200 mx-auto mb-6" />
         <h1 className="text-4xl mb-6">Sign in to view your wishlist</h1>
         <p className="text-stone-500 mb-8">Save your favorite pieces and come back to them later.</p>
@@ -106,10 +106,10 @@ export default function Wishlist() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-16">
-      <div className="mb-12">
-        <h1 className="text-5xl md:text-7xl mb-4 italic font-light">High-Intent <span className="font-serif not-italic">Signals</span></h1>
-        <p className="text-stone-500">Saved items, similar options, and availability cues from your strongest product interest.</p>
+    <div className="max-w-6xl mx-auto px-3 py-8 sm:px-4 md:py-16">
+      <div className="mb-8 md:mb-12">
+        <h1 className="mb-3 text-4xl italic font-light leading-none md:mb-4 md:text-7xl">Saved <span className="font-serif not-italic">Favorites</span></h1>
+        <p className="text-stone-500">Your saved pieces, similar options, and availability updates in one place.</p>
       </div>
 
       {loading ? (
@@ -117,19 +117,19 @@ export default function Wishlist() {
           <div className="w-12 h-12 rounded-full border-2 border-brand-primary/10 border-t-brand-primary animate-spin" />
         </div>
       ) : items.length === 0 ? (
-        <div className="bg-white rounded-[40px] p-24 text-center border border-brand-primary/5">
+        <div className="bg-white rounded-[32px] p-10 text-center border border-brand-primary/5 md:rounded-[40px] md:p-24">
           <div className="w-20 h-20 rounded-full bg-stone-50 flex items-center justify-center mx-auto mb-6 text-stone-300">
             <Heart size={40} />
           </div>
-          <h3 className="text-2xl mb-2 font-serif">No high-intent items yet</h3>
-          <p className="text-stone-400 mb-8">Start saving products to unlock stronger recommendations and comparison context.</p>
+          <h3 className="text-2xl mb-2 font-serif">No saved favorites yet</h3>
+          <p className="text-stone-400 mb-8">Save products you like so you can compare them later.</p>
           <Link to="/shop" className="text-brand-primary font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:gap-4 transition-all">
             Browse Shop <ArrowRight size={16} />
           </Link>
         </div>
       ) : (
         <div className="space-y-14">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
             <AnimatePresence>
               {items.map((item, idx) => {
                 const product = products.find(p => p.id === item.productId);
@@ -140,7 +140,7 @@ export default function Wishlist() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ delay: idx * 0.05 }}
-                    className="bg-white rounded-[32px] overflow-hidden border border-brand-primary/5 group"
+                    className="bg-white rounded-[28px] overflow-hidden border border-brand-primary/5 group md:rounded-[32px]"
                   >
                     <div className="aspect-square relative overflow-hidden">
                       <img src={item.image} alt={item.productName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
@@ -151,7 +151,7 @@ export default function Wishlist() {
                         <Trash2 size={18} />
                       </button>
                       <div className="absolute bottom-4 left-4 right-4 flex flex-wrap gap-2">
-                        {(product ? getProductInsightLabels(product, preferences, idx) : ['Saved intent']).slice(0, 2).map(label => (
+                        {(product ? getProductInsightLabels(product, preferences, idx) : ['Saved favorite']).slice(0, 2).map(label => (
                           <span key={label} className="rounded-full bg-white/85 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-stone-600 backdrop-blur">
                             {label}
                           </span>
@@ -161,7 +161,7 @@ export default function Wishlist() {
                         </span>
                       </div>
                     </div>
-                    <div className="p-6 text-center">
+                    <div className="p-5 text-center md:p-6">
                       <h3 className="text-xl font-bold mb-1">{item.productName}</h3>
                       <p className="text-brand-primary font-bold mb-6">KSH {item.price}</p>
                       <div className="mb-5 grid grid-cols-2 gap-2 text-left">
@@ -178,7 +178,7 @@ export default function Wishlist() {
                         onClick={() => moveToCart(item)}
                         className="w-full bg-stone-900 text-white py-4 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-brand-primary transition-colors"
                       >
-                        <ShoppingBag size={16} /> Confirm Intent
+                        <ShoppingBag size={16} /> Move to cart
                       </button>
                     </div>
                   </motion.div>
@@ -189,7 +189,7 @@ export default function Wishlist() {
 
           {recommendedProducts.length > 0 && (
             <section className="border-t border-brand-primary/10 pt-10">
-              <div className="mb-6 flex items-center justify-between gap-4">
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="text-3xl font-serif">Similar items</h2>
                   <p className="text-sm text-stone-400">Recommendations improve as you compare and save more products.</p>
