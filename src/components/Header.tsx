@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { auth, signInWithGoogle, db, collection, getDocs, query, limit } from '../lib/firebase';
+import { auth, db, collection, getDocs, query, limit } from '../lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { Camera, ShoppingBag, Paintbrush, User as UserIcon, LogOut, Search, Sparkles } from 'lucide-react';
+import { Camera, ShoppingBag, Paintbrush, User as UserIcon, Search, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Tooltip from './Tooltip';
 
@@ -184,25 +184,16 @@ export default function Header() {
                 <UserIcon size={18} />
               </Link>
             </Tooltip>
-            {user ? (
-              <div className="flex items-center gap-3">
-                {user.photoURL ? (
-                  <img src={user.photoURL} alt={user.displayName || ''} className="w-8 h-8 rounded-full border border-stone-100 shadow-sm" referrerPolicy="no-referrer" />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center">
-                    <UserIcon size={12} className="text-stone-300" />
-                  </div>
-                )}
+            <div className="flex items-center gap-3">
+              {user?.photoURL ? (
+                <img src={user.photoURL} alt={user.displayName || ''} className="w-8 h-8 rounded-full border border-stone-100 shadow-sm" referrerPolicy="no-referrer" />
+              ) : (
+                <div className="flex min-h-9 items-center gap-2 rounded-full bg-stone-50 px-3 text-[10px] font-black uppercase tracking-widest text-stone-500">
+                  <UserIcon size={13} className="text-brand-primary" />
+                  <span className="hidden sm:inline">Demo mode</span>
+                </div>
+              )}
               </div>
-            ) : (
-              <button 
-                onClick={signInWithGoogle}
-                className="p-3 text-stone-400 hover:text-brand-primary hover:bg-stone-50 rounded-full transition-all text-xs font-bold uppercase tracking-widest flex items-center gap-2"
-              >
-                <LogOut size={18} className="rotate-180" />
-                <span className="hidden sm:inline">Sign In</span>
-              </button>
-            )}
           </div>
         </div>
       </div>

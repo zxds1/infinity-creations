@@ -64,21 +64,35 @@ export default function Branding() {
   };
 
   const handleSubmitRequest = async () => {
-    if (!auth.currentUser) {
-      toast.error("Please sign in to send a request");
-      return;
-    }
     if (!description.trim()) {
       toast.error("Please describe your project");
+      return;
+    }
+    if (!selectedService) {
+      toast.error("Please choose a service");
+      return;
+    }
+
+    if (!auth.currentUser) {
+      const request = {
+        serviceId: selectedService.id,
+        serviceName: selectedService.title,
+        userDescription: description,
+        referenceImage: image,
+        sellerSignal: sellerProfile,
+        createdAt: new Date().toISOString()
+      };
+      const existing = JSON.parse(window.localStorage.getItem('maridadi.demoBrandingRequests') || '[]');
+      window.localStorage.setItem('maridadi.demoBrandingRequests', JSON.stringify([request, ...existing].slice(0, 20)));
+      toast.success("Branding request saved in demo mode.");
+      setDescription("");
+      setImage(null);
+      setSellerProfile({ businessType: '', positioning: '', targetCustomers: '' });
       return;
     }
 
     setSubmitting(true);
     try {
-      if (!selectedService) {
-        toast.error("Please choose a service");
-        return;
-      }
       const serviceName = selectedService.title || 'Branding service';
       const sellerSignal = {
         businessType: sellerProfile.businessType.trim(),

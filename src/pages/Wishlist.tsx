@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { assertProductExists, getProductInsightLabels, getProductPreferenceScore, getStoredPreferences, trackEvent } from '../lib/behavior';
+import { addDemoCartItem, getDemoWishlist, saveDemoWishlist } from '../lib/demoMode';
 
 interface WishlistItem {
   id: string;
@@ -22,8 +23,31 @@ export default function Wishlist() {
   const preferences = getStoredPreferences();
 
   useEffect(() => {
+    getDocs(collection(db, 'products'))
+      .then(snapshot => {
+        const productData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
+        setProducts(productData);
+        if (!auth.currentUser) {
+          const savedIds = getDemoWishlist();
+          setItems(savedIds.map(productId => {
+            const product = productData.find((p: any) => p.id === productId);
+            return {
+              id: `demo-wishlist-${productId}`,
+              productId,
+              productName: product?.name || 'Saved idea',
+              price: Number(product?.price || 0),
+              image: product?.image || '',
+              createdAt: null
+            };
+          }));
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!auth.currentUser) setLoading(false);
+      });
+
     if (!auth.currentUser) {
-      setLoading(false);
       return;
     }
 
@@ -31,10 +55,6 @@ export default function Wishlist() {
       collection(db, 'wishlist'),
       where('userId', '==', auth.currentUser.uid)
     );
-
-    getDocs(collection(db, 'products'))
-      .then(snapshot => setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))))
-      .catch(() => undefined);
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({
@@ -54,6 +74,13 @@ export default function Wishlist() {
   const removeFromWishlist = async (id: string) => {
     try {
       const item = items.find(i => i.id === id);
+      if (!auth.currentUser) {
+        const nextItems = items.filter(i => i.id !== id);
+        setItems(nextItems);
+        saveDemoWishlist(nextItems.map(i => i.productId));
+        toast.success("Removed from saved ideas.");
+        return;
+      }
       await deleteDoc(doc(db, 'wishlist', id));
       if (item) {
         trackEvent({ eventType: 'wishlist', productId: item.productId, metadata: { action: 'remove-from-core' } }).catch(() => undefined);
@@ -65,10 +92,24 @@ export default function Wishlist() {
   };
 
   const moveToCart = async (item: WishlistItem) => {
-    if (!auth.currentUser) return;
-    
     try {
       await assertProductExists(item.productId);
+      if (!auth.currentUser) {
+        addDemoCartItem({
+          productId: item.productId,
+          productName: item.productName,
+          price: item.price,
+          image: item.image,
+          quantity: 1,
+          deliveryAddress: "Delivery address to be confirmed",
+          createdAt: new Date().toISOString()
+        });
+        const nextItems = items.filter(i => i.id !== item.id);
+        setItems(nextItems);
+        saveDemoWishlist(nextItems.map(i => i.productId));
+        toast.success("Added to your order.");
+        return;
+      }
       await addDoc(collection(db, 'cart'), {
         userId: auth.currentUser.uid,
         productId: item.productId,
@@ -91,19 +132,6 @@ export default function Wishlist() {
     .filter(product => !items.some(item => item.productId === product.id))
     .sort((a, b) => getProductPreferenceScore(b, preferences) - getProductPreferenceScore(a, preferences))
     .slice(0, 3);
-
-  if (!auth.currentUser) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-16 text-center md:py-24">
-        <Heart size={64} className="text-stone-200 mx-auto mb-6" />
-        <h1 className="text-4xl mb-6">Sign in to view saved ideas</h1>
-        <p className="text-stone-500 mb-8">Keep track of designs and items you are interested in.</p>
-        <Link to="/" className="bg-brand-primary text-brand-cream px-8 py-4 rounded-2xl font-bold uppercase tracking-widest text-xs">
-          Explore designs
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-6xl mx-auto px-3 py-8 sm:px-4 md:py-16">

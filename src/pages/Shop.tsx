@@ -13,6 +13,7 @@ import {
   type DesignPreferences
 } from '../lib/behavior';
 import { defaultSiteContent, fetchSiteContent, type SiteContent } from '../lib/siteContent';
+import { DEMO_USER_ID, addDemoCartItem, getDemoWishlist, saveDemoWishlist } from '../lib/demoMode';
 
 const DEFAULT_MAX_PRICE = 100000;
 
@@ -69,6 +70,8 @@ export default function Shop() {
         if (auth.currentUser) {
           const wishSnap = await getDocs(query(collection(db, 'wishlist'), where('userId', '==', auth.currentUser.uid)));
           setWishlist(wishSnap.docs.map(doc => doc.data().productId));
+        } else {
+          setWishlist(getDemoWishlist());
         }
       } catch (err) {
         console.error(err);
@@ -208,14 +211,16 @@ export default function Shop() {
 
   const handleToggleWishlist = async (e: React.MouseEvent, product: any) => {
     e.stopPropagation();
-    if (!auth.currentUser) {
-      toast.error("Please sign in to save ideas.");
-      return;
-    }
-
     const isWishlisted = wishlist.includes(product.id);
     try {
       await assertProductExists(product.id);
+      if (!auth.currentUser) {
+        const next = isWishlisted ? wishlist.filter(id => id !== product.id) : [...wishlist, product.id];
+        setWishlist(next);
+        saveDemoWishlist(next);
+        toast.success(isWishlisted ? "Removed from saved ideas." : "Saved for later.");
+        return;
+      }
       if (isWishlisted) {
         const wishSnap = await getDocs(query(collection(db, 'wishlist'), where('userId', '==', auth.currentUser.uid), where('productId', '==', product.id)));
         wishSnap.forEach(async (d) => await deleteDoc(doc(db, 'wishlist', d.id)));
@@ -244,9 +249,25 @@ export default function Shop() {
   };
 
   const handleSubmitReview = async () => {
-    if (!auth.currentUser || !selectedProduct) return;
+    if (!selectedProduct) return;
     if (!newReview.comment.trim()) {
       toast.error("Please add a comment");
+      return;
+    }
+
+    if (!auth.currentUser) {
+      const reviewData = {
+        id: `demo-review-${Date.now()}`,
+        userId: DEMO_USER_ID,
+        userName: 'Demo client',
+        userPhoto: '',
+        rating: newReview.rating,
+        comment: newReview.comment,
+        createdAt: new Date()
+      };
+      setReviews([reviewData, ...reviews]);
+      setNewReview({ rating: 5, comment: '' });
+      toast.success("Review added in demo mode.");
       return;
     }
 
@@ -269,11 +290,6 @@ export default function Shop() {
   };
 
   const handleAddToCart = async (product: any) => {
-    if (!auth.currentUser) {
-      toast.error("Please sign in to use the cart");
-      return;
-    }
-
     if (!deliveryAddress.trim()) {
       toast.error("Please provide a delivery address");
       return;
@@ -284,6 +300,23 @@ export default function Shop() {
 
     try {
       await assertProductExists(product.id);
+      if (!auth.currentUser) {
+        addDemoCartItem({
+          productId: product.id,
+          productName: product.name,
+          price: Number(finalPrice),
+          image: currentVariation?.image || product.image,
+          quantity,
+          deliveryAddress,
+          variationName: selectedColor,
+          createdAt: new Date().toISOString()
+        });
+        toast.success(`${product.name} added to your demo order.`);
+        setQuantity(1);
+        setDeliveryAddress("");
+        setSelectedProduct(null);
+        return;
+      }
       await addDoc(collection(db, 'cart'), {
         userId: auth.currentUser.uid,
         productId: product.id,
@@ -311,13 +344,22 @@ export default function Shop() {
   };
 
   const handleOrder = async (product: typeof products[0]) => {
-    if (!auth.currentUser) {
-      toast.error("Please sign in to place an order");
-      return;
-    }
-
     try {
       await assertProductExists(product.id);
+      if (!auth.currentUser) {
+        addDemoCartItem({
+          productId: product.id,
+          productName: product.name,
+          price: Number(product.price || 0),
+          image: product.image,
+          quantity: 1,
+          deliveryAddress: 'Delivery details to be confirmed',
+          createdAt: new Date().toISOString()
+        });
+        toast.success("Added to your demo order.");
+        setSelectedProduct(null);
+        return;
+      }
       await addDoc(collection(db, 'purchaseRequests'), {
         userId: auth.currentUser.uid,
         type: product.category.toLowerCase().includes('furniture') ? 'furniture' : (product.category.toLowerCase().includes('jewelry') ? 'jewelry' : 'print'),
@@ -915,29 +957,27 @@ export default function Shop() {
                     ))}
                   </div>
 
-                  {auth.currentUser && (
-                    <div className="bg-white border border-stone-100 p-4 rounded-2xl">
-                      <div className="flex gap-2 mb-3">
-                        {[1,2,3,4,5].map(star => (
-                          <button key={star} onClick={() => setNewReview({...newReview, rating: star})}>
-                            <Star size={16} fill={star <= newReview.rating ? "#f59e0b" : "none"} className={star <= newReview.rating ? "text-amber-500" : "text-stone-300"} />
-                          </button>
-                        ))}
-                      </div>
-                      <textarea 
-                        value={newReview.comment}
-                        onChange={(e) => setNewReview({...newReview, comment: e.target.value})}
-                        placeholder="Write a review..."
-                        className="w-full text-xs p-2 focus:outline-none min-h-[60px]"
-                      />
-                      <button 
-                        onClick={handleSubmitReview}
-                        className="mt-2 text-[10px] font-bold bg-stone-900 text-white px-4 py-2 rounded-lg uppercase tracking-widest hover:bg-brand-primary transition-colors"
-                      >
-                        Post Review
-                      </button>
+                  <div className="bg-white border border-stone-100 p-4 rounded-2xl">
+                    <div className="flex gap-2 mb-3">
+                      {[1,2,3,4,5].map(star => (
+                        <button key={star} onClick={() => setNewReview({...newReview, rating: star})}>
+                          <Star size={16} fill={star <= newReview.rating ? "#f59e0b" : "none"} className={star <= newReview.rating ? "text-amber-500" : "text-stone-300"} />
+                        </button>
+                      ))}
                     </div>
-                  )}
+                    <textarea 
+                      value={newReview.comment}
+                      onChange={(e) => setNewReview({...newReview, comment: e.target.value})}
+                      placeholder="Write a review..."
+                      className="w-full text-xs p-2 focus:outline-none min-h-[60px]"
+                    />
+                    <button 
+                      onClick={handleSubmitReview}
+                      className="mt-2 text-[10px] font-bold bg-stone-900 text-white px-4 py-2 rounded-lg uppercase tracking-widest hover:bg-brand-primary transition-colors"
+                    >
+                      Post Review
+                    </button>
+                  </div>
                 </div>
 
                 <div className="mt-auto space-y-4">

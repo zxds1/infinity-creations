@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { assertProductExists, trackEvent } from '../lib/behavior';
+import { DEMO_USER_ID, addDemoCartItem, getDemoOrders } from '../lib/demoMode';
 
 interface Order {
   id: string;
@@ -44,7 +45,7 @@ export default function Orders() {
   useEffect(() => {
     if (!authReady) return;
     if (!user) {
-      setOrders([]);
+      setOrders(getDemoOrders<Order>());
       setLoading(false);
       return;
     }
@@ -71,12 +72,25 @@ export default function Orders() {
   }, [authReady, user]);
 
   const handleReorder = async (order: Order) => {
-    if (!auth.currentUser) return;
     try {
       const firstItem = order.details?.items?.[0];
       const productId = firstItem?.productId || order.details.productId;
       if (productId) {
         await assertProductExists(productId);
+      }
+      if (!auth.currentUser) {
+        addDemoCartItem({
+          userId: DEMO_USER_ID,
+          productId,
+          productName: firstItem?.productName || order.details.productName || "Reordered Item",
+          price: firstItem?.unitPrice || order.totalAmount || 0,
+          image: firstItem?.image || order.details.image || "",
+          quantity: firstItem?.quantity || order.details.quantity || 1,
+          deliveryAddress: order.details.deliveryAddress || order.details?.deliveryAddress || "",
+          createdAt: new Date().toISOString()
+        });
+        toast.success("Added to your order.");
+        return;
       }
       const cartItem = {
         userId: auth.currentUser.uid,
@@ -134,15 +148,6 @@ export default function Orders() {
       default: return '0%';
     }
   };
-
-  if (authReady && !user) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-16 text-center md:py-24">
-        <h1 className="text-4xl mb-6">Sign in to view your activity</h1>
-        <p className="text-stone-500">Track your orders, saved designs, and custom requests.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-4xl mx-auto px-3 py-8 sm:px-4 md:py-16">

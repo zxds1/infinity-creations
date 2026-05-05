@@ -300,6 +300,21 @@ export default function SpaceAnalyzer() {
             toast.error("Analysis saved locally, but cloud history was unavailable");
           }
         }
+      } else if (typeof window !== 'undefined') {
+        const existing = JSON.parse(window.localStorage.getItem('maridadi.demoDesignRequests') || '[]');
+        window.localStorage.setItem('maridadi.demoDesignRequests', JSON.stringify([
+          {
+            mediaCount: mediaFiles.length,
+            prompt: promptContext,
+            serviceId: selectedService?.id || null,
+            serviceName: selectedService?.title || null,
+            recommendations,
+            preferences,
+            status: 'completed',
+            createdAt: new Date().toISOString()
+          },
+          ...existing
+        ].slice(0, 20)));
       }
     } catch (error) {
       console.error(error);
@@ -566,9 +581,7 @@ export default function SpaceAnalyzer() {
             </div>
           </button>
 
-          {!auth.currentUser && image && (
-            <p className="text-sm text-center text-stone-400 italic">Sign in to save this analysis to your history.</p>
-          )}
+          <p className="text-sm text-center text-stone-400 italic">Your design direction is saved in this demo browser.</p>
         </div>
 
         {/* Results Side */}

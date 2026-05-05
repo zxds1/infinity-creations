@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { auth, db, doc, getDocFromServer, signInWithGoogle } from '../lib/firebase';
-import { onAuthStateChanged, User, signOut } from 'firebase/auth';
-import { Camera, ShoppingBag, Paintbrush, User as UserIcon, LogOut, X, Facebook, Instagram, Twitter, ChevronRight, Settings, Heart } from 'lucide-react';
+import { auth, db, doc, getDocFromServer } from '../lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { Camera, ShoppingBag, Paintbrush, User as UserIcon, X, Facebook, Instagram, Twitter, ChevronRight, Settings, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function Sidebar() {
@@ -166,31 +166,21 @@ export default function Sidebar() {
         </nav>
 
         <div className="mt-auto space-y-6">
-          {user ? (
-            <div className="flex flex-col gap-4">
-              <div className={`flex items-center gap-3 p-2 rounded-2xl bg-stone-50 overflow-hidden ${isExpanded ? 'px-4' : 'justify-center'}`}>
-                {user.photoURL ? (
-                  <img src={user.photoURL} alt="User" className="min-w-[32px] h-[32px] rounded-full" referrerPolicy="no-referrer" />
-                ) : (
-                  <UserIcon size={32} className="text-stone-300" />
-                )}
-                {isExpanded && (
-                  <div className="flex flex-col overflow-hidden">
-                    <span className="text-xs font-bold text-stone-900 truncate">{user.displayName}</span>
-                    <button onClick={() => signOut(auth)} className="text-[10px] font-bold text-stone-400 hover:text-red-500 text-left uppercase tracking-widest">Sign Out</button>
-                  </div>
-                )}
-              </div>
+          <div className="flex flex-col gap-4">
+            <div className={`flex items-center gap-3 p-2 rounded-2xl bg-stone-50 overflow-hidden ${isExpanded ? 'px-4' : 'justify-center'}`}>
+              {user?.photoURL ? (
+                <img src={user.photoURL} alt="User" className="min-w-[32px] h-[32px] rounded-full" referrerPolicy="no-referrer" />
+              ) : (
+                <UserIcon size={32} className="text-stone-300" />
+              )}
+              {isExpanded && (
+                <div className="flex flex-col overflow-hidden">
+                  <span className="text-xs font-bold text-stone-900 truncate">{user?.displayName || 'Demo client'}</span>
+                  <span className="text-[10px] font-bold text-stone-400 text-left uppercase tracking-widest">No sign in needed</span>
+                </div>
+              )}
             </div>
-          ) : (
-            <button 
-              onClick={signInWithGoogle}
-              className={`w-full flex items-center justify-center p-3 rounded-2xl bg-brand-primary text-brand-cream hover:opacity-90 transition-opacity ${isExpanded ? 'gap-3 px-4' : ''}`}
-            >
-              <LogOut size={24} className="rotate-180" />
-              {isExpanded && <span className="font-bold text-sm tracking-widest uppercase">Sign In</span>}
-            </button>
-          )}
+          </div>
 
           {isExpanded && (
             <motion.div 

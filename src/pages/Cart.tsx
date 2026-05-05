@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { trackEvent } from '../lib/behavior';
 import { createCheckout, type CheckoutResponse, type PaymentMethod } from '../lib/payments';
+import { DEMO_USER_ID, addDemoOrder, getDemoAddresses, getDemoCart, saveDemoAddresses, saveDemoCart } from '../lib/demoMode';
 
 interface CartItem {
   id: string;
@@ -59,8 +60,8 @@ export default function Cart() {
   useEffect(() => {
     if (!authReady) return;
     if (!user) {
-      setItems([]);
-      setAddresses([]);
+      setItems(getDemoCart<CartItem>());
+      setAddresses(getDemoAddresses<Address>());
       setLoading(false);
       return;
     }
@@ -107,6 +108,12 @@ export default function Cart() {
 
   const updateQuantity = async (id: string, newQty: number) => {
     if (newQty < 1) return;
+    if (!user) {
+      const next = items.map(item => item.id === id ? { ...item, quantity: newQty } : item);
+      setItems(next);
+      saveDemoCart(next);
+      return;
+    }
     try {
       await updateDoc(doc(db, 'cart', id), { quantity: newQty });
     } catch (err) {
@@ -115,6 +122,12 @@ export default function Cart() {
   };
 
   const updateAddress = async (id: string, address: string) => {
+    if (!user) {
+      const next = items.map(item => item.id === id ? { ...item, deliveryAddress: address } : item);
+      setItems(next);
+      saveDemoCart(next);
+      return;
+    }
     try {
       await updateDoc(doc(db, 'cart', id), { deliveryAddress: address });
     } catch (err) {
@@ -123,7 +136,24 @@ export default function Cart() {
   };
 
   const saveNewAddress = async () => {
-    if (!auth.currentUser || !newAddress.label || !newAddress.address) return;
+    if (!newAddress.label || !newAddress.address) return;
+    if (!auth.currentUser) {
+      const nextAddress = {
+        id: editingAddressId || `demo-address-${Date.now()}`,
+        ...newAddress,
+        isDefault: addresses.length === 0
+      };
+      const next = editingAddressId
+        ? addresses.map(address => address.id === editingAddressId ? { ...address, ...newAddress } : address)
+        : [...addresses, nextAddress];
+      setAddresses(next);
+      saveDemoAddresses(next);
+      toast.success(editingAddressId ? "Address updated!" : "Address saved!");
+      setNewAddress({ label: '', address: '' });
+      setEditingAddressId(null);
+      setShowAddressModal(false);
+      return;
+    }
     try {
       if (editingAddressId) {
         await updateDoc(doc(db, `users/${auth.currentUser.uid}/addresses`, editingAddressId), {
@@ -147,7 +177,13 @@ export default function Cart() {
   };
 
   const deleteAddress = async (id: string) => {
-    if (!auth.currentUser) return;
+    if (!auth.currentUser) {
+      const next = addresses.filter(address => address.id !== id);
+      setAddresses(next);
+      saveDemoAddresses(next);
+      toast.success("Address deleted");
+      return;
+    }
     try {
       await deleteDoc(doc(db, `users/${auth.currentUser.uid}/addresses`, id));
       toast.success("Address deleted");
@@ -157,7 +193,13 @@ export default function Cart() {
   };
 
   const setAddressAsDefault = async (id: string) => {
-    if (!auth.currentUser) return;
+    if (!auth.currentUser) {
+      const next = addresses.map(address => ({ ...address, isDefault: address.id === id }));
+      setAddresses(next);
+      saveDemoAddresses(next);
+      toast.success("Default address updated");
+      return;
+    }
     try {
       const updates = addresses.map(addr => 
         updateDoc(doc(db, `users/${auth.currentUser.uid}/addresses`, addr.id), {
@@ -174,6 +216,13 @@ export default function Cart() {
   const removeItem = async (id: string) => {
     try {
       const item = items.find(i => i.id === id);
+      if (!user) {
+        const next = items.filter(cartItem => cartItem.id !== id);
+        setItems(next);
+        saveDemoCart(next);
+        toast.success("Removed from cart");
+        return;
+      }
       await deleteDoc(doc(db, 'cart', id));
       if (item) {
         trackEvent({ eventType: 'cart', productId: item.productId, metadata: { action: 'remove-intent' } }).catch(() => undefined);
@@ -202,6 +251,40 @@ export default function Cart() {
 
     setProcessingCheckout(true);
     try {
+      if (!user) {
+        const subtotal = total;
+        const demoResult: CheckoutResponse = {
+          orderId: `DEMO-${Date.now().toString().slice(-6)}`,
+          status: 'pending_payment',
+          paymentStatus: 'Demo order',
+          paymentInstructions: {
+            title: 'Demo checkout created',
+            message: 'This preview order was created without sign-in. No payment was charged.',
+            provider: paymentMethod === 'mpesa' ? 'M-Pesa demo' : 'Card demo'
+          },
+          amounts: {
+            currency: 'KES',
+            subtotal,
+            deliveryFee: 500,
+            total: subtotal + 500
+          },
+          deliveryEstimate: '3-7 business days'
+        };
+        addDemoOrder({
+          id: demoResult.orderId,
+          userId: DEMO_USER_ID,
+          type: 'Checkout',
+          details: { items, deliveryAddress: checkoutAddress, contact },
+          status: 'pending_payment',
+          amounts: demoResult.amounts,
+          paymentStatus: demoResult.paymentStatus,
+          createdAt: { seconds: Math.floor(Date.now() / 1000) }
+        });
+        setCheckoutResult(demoResult);
+        setCheckoutStep('payment');
+        toast.success("Demo order created.");
+        return;
+      }
       const result = await createCheckout({
         cartItemIds: items.map(item => item.id),
         contact,
@@ -225,18 +308,6 @@ export default function Cart() {
   };
 
   const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-  if (authReady && !user) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-16 text-center md:py-24">
-        <ShoppingBag size={64} className="text-stone-200 mx-auto mb-6" />
-        <h1 className="text-4xl mb-6">Sign in to view your order</h1>
-        <Link to="/" className="bg-brand-primary text-brand-cream px-8 py-4 rounded-2xl font-bold uppercase tracking-widest text-xs">
-          Explore designs
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-6xl mx-auto px-3 py-8 sm:px-4 md:py-16">
