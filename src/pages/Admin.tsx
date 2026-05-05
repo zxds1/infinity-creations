@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db, collection, getDocs, getDocFromServer, addDoc, updateDoc, deleteDoc, doc, query, orderBy, setDoc } from '../lib/firebase';
-import { Package, ShoppingBag, Paintbrush, Plus, Trash2, Edit3, Settings, CheckCircle2, Truck, Clock, Sparkles, TrendingUp, Users, DollarSign, RefreshCw, Bike, Zap, Home, Camera, Heart, Star, Type } from 'lucide-react';
+import { Package, ShoppingBag, Paintbrush, Plus, Trash2, Edit3, Settings, CheckCircle2, Truck, Clock, Sparkles, Users, DollarSign, RefreshCw, Bike, Zap, Home, Camera, Heart, Star, Type, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import { generateAdminInsights } from '../services/geminiService';
@@ -33,7 +33,7 @@ export default function Admin() {
   const [newProduct, setNewProduct] = useState({ 
     name: '', 
     price: 0, 
-    category: 'Furniture', 
+    category: 'Custom',
     image: '', 
     description: '', 
     variations: [] as any[],
@@ -99,7 +99,7 @@ export default function Admin() {
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, target: 'product' | 'variation' | 'service') => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, target: 'product' | 'variation' | 'service' | 'hero' | 'category', categoryIndex?: number) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -112,6 +112,10 @@ export default function Admin() {
         setVariationInput(prev => ({ ...prev, image: base64 }));
       } else if (target === 'service') {
         setNewService(prev => ({ ...prev, image: base64 }));
+      } else if (target === 'hero') {
+        setSiteContent(prev => ({ ...prev, homeHeroImage: base64 }));
+      } else if (target === 'category' && typeof categoryIndex === 'number') {
+        updateSiteCategory(categoryIndex, 'image', base64);
       }
       toast.success("Image uploaded successfully");
     };
@@ -144,7 +148,7 @@ export default function Admin() {
       setNewProduct({ 
         name: '', 
         price: 0, 
-        category: 'Furniture', 
+        category: 'Custom',
         image: '', 
         description: '', 
         variations: [],
@@ -157,6 +161,31 @@ export default function Admin() {
   };
 
   const popularIcons = ['Truck', 'Bike', 'Paintbrush', 'ShoppingBag', 'Zap', 'Home', 'Camera', 'Package', 'Clock', 'Settings', 'Heart', 'Star', 'Sparkles'];
+
+  const getOrderTotal = (order: any) => {
+    const possibleTotal = order.amounts?.total ?? order.total ?? order.totalAmount ?? order.details?.total;
+    const numericTotal = Number(possibleTotal);
+    return Number.isFinite(numericTotal) ? numericTotal : 0;
+  };
+
+  const formatCurrency = (value: number) => value > 0
+    ? new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', maximumFractionDigits: 0 }).format(value)
+    : 'KES 0';
+
+  const totalRevenue = orders.reduce((sum, order) => sum + getOrderTotal(order), 0);
+  const pendingOrders = orders.filter(order => ['pending', 'pending_payment', 'received'].includes(String(order.status || '').toLowerCase())).length;
+  const catalogReadyCount = products.filter(product => product.name && product.description && product.image && Number(product.price) > 0).length;
+  const catalogReadiness = products.length ? Math.round((catalogReadyCount / products.length) * 100) : 0;
+  const configuredCategoryCount = new Set([
+    ...categories.map(category => category.name || category.slug).filter(Boolean),
+    ...siteContent.categories.map(category => category.title).filter(Boolean)
+  ]).size;
+  const adminStats = [
+    { label: 'Revenue', value: formatCurrency(totalRevenue), sub: 'From saved orders', icon: DollarSign },
+    { label: 'Orders', value: orders.length, sub: `${pendingOrders} waiting`, icon: Package },
+    { label: 'Catalog Items', value: products.length, sub: `${catalogReadyCount} complete`, icon: ShoppingBag },
+    { label: 'Services', value: siteContent.services.length, sub: `${configuredCategoryCount} categories`, icon: Paintbrush }
+  ];
 
   const addService = async () => {
     try {
@@ -280,12 +309,7 @@ export default function Admin() {
 
           {/* Quick Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { label: 'Revenue', value: 'KSH 124K', sub: 'Last 30 days', icon: DollarSign },
-              { label: 'Orders', value: orders.length, sub: 'All time', icon: Package },
-              { label: 'Creators', value: '4', sub: 'Active', icon: Users },
-              { label: 'Growth', value: '+12%', sub: 'Vs last mo', icon: TrendingUp }
-            ].map((stat, i) => (
+            {adminStats.map((stat, i) => (
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -297,10 +321,11 @@ export default function Admin() {
                   <div className="p-2.5 rounded-xl bg-white border border-stone-100 text-stone-400">
                     <stat.icon size={18} />
                   </div>
-                  <span className="text-[10px] font-black tracking-widest text-emerald-500 font-mono">LIVE</span>
+                  <span className="text-[10px] font-black tracking-widest text-emerald-500 font-mono">CURRENT</span>
                 </div>
                 <div className="text-xl md:text-2xl font-bold text-stone-900 mb-1">{stat.value}</div>
                 <div className="text-[10px] text-stone-400 uppercase tracking-widest font-bold">{stat.label}</div>
+                <div className="mt-2 text-[10px] font-bold uppercase tracking-widest text-stone-300">{stat.sub}</div>
               </motion.div>
             ))}
           </div>
@@ -451,14 +476,8 @@ export default function Admin() {
                 <input type="number" placeholder="Price (KSH)" className="p-4 rounded-xl border border-stone-100 focus:outline-brand-primary" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: Number(e.target.value)})} />
                 <select className="p-4 rounded-xl border border-stone-100 focus:outline-brand-primary" value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})}>
                   {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                  {categories.length === 0 && (
-                    <>
-                      <option>Furniture</option>
-                      <option>Photography</option>
-                      <option>Jewelry</option>
-                      <option>Art Mounts</option>
-                    </>
-                  )}
+                  {categories.length === 0 && siteContent.categories.map(category => <option key={category.title} value={category.title}>{category.title}</option>)}
+                  {categories.length === 0 && siteContent.categories.length === 0 && <option>Custom</option>}
                 </select>
                 <input type="number" placeholder="Stock quantity" className="p-4 rounded-xl border border-stone-100 focus:outline-brand-primary" value={newProduct.stockQuantity} onChange={e => setNewProduct({...newProduct, stockQuantity: Number(e.target.value)})} />
                 <input type="text" placeholder="Tags (comma separated)" className="p-4 rounded-xl border border-stone-100 focus:outline-brand-primary" value={newProduct.tags} onChange={e => setNewProduct({...newProduct, tags: e.target.value})} />
@@ -508,23 +527,6 @@ export default function Admin() {
                     </div>
                   )}
                 </div>
-                <div className="md:col-span-4 grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-                  {[
-                    { name: 'Furniture', url: 'https://images.unsplash.com/photo-1592078615290-033ee584e267' },
-                    { name: 'Jewelry', url: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338' },
-                    { name: 'Photography', url: 'https://images.unsplash.com/photo-1554048612-b6a482bc67e5' },
-                    { name: 'Art Mounts', url: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5' }
-                  ].map(preset => (
-                    <button 
-                      key={preset.name}
-                      onClick={() => setNewProduct({...newProduct, image: preset.url, category: preset.name})}
-                      className="flex items-center gap-2 p-3 bg-stone-50 rounded-xl hover:bg-stone-100 transition-all border border-stone-100 text-left"
-                    >
-                      <img src={preset.url} className="w-8 h-8 rounded-lg object-cover" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">{preset.name}</span>
-                    </button>
-                  ))}
-                </div>
                 <button onClick={addProduct} className="bg-brand-primary text-brand-cream p-4 rounded-xl font-bold flex items-center justify-center gap-2 md:col-span-4">
                   <Plus size={20} /> Add to Catalog
                 </button>
@@ -535,7 +537,14 @@ export default function Admin() {
               {products.map(product => (
                 <div key={product.id} className="bg-white rounded-[32px] border border-stone-100 shadow-sm overflow-hidden group">
                    <div className="aspect-square bg-stone-100 relative">
-                     <img src={product.image || "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5"} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                     {product.image ? (
+                       <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                     ) : (
+                       <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-6 text-center text-stone-300">
+                         <ImageIcon size={36} />
+                         <span className="text-[10px] font-black uppercase tracking-widest">Add product image</span>
+                       </div>
+                     )}
                      <div className="absolute top-4 right-4 bg-white/90 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">{product.category}</div>
                    </div>
                    <div className="p-6">
@@ -784,6 +793,37 @@ export default function Admin() {
 
             <div className="rounded-[32px] border border-stone-100 bg-white p-6 shadow-sm md:p-8">
               <div className="mb-8">
+                <h3 className="text-2xl font-serif">Site Images</h3>
+                <p className="mt-2 text-sm text-stone-500">Manage the images used across the customer-facing app.</p>
+              </div>
+              <div className="grid grid-cols-1 gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+                <div className="overflow-hidden rounded-3xl bg-stone-100">
+                  {siteContent.homeHeroImage ? (
+                    <img src={siteContent.homeHeroImage} alt="Homepage hero preview" className="aspect-video w-full object-cover" referrerPolicy="no-referrer" />
+                  ) : (
+                    <div className="flex aspect-video items-center justify-center text-stone-300">
+                      <ImageIcon size={40} />
+                    </div>
+                  )}
+                </div>
+                <label className="block">
+                  <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-stone-400">Homepage hero image</span>
+                  <input
+                    value={siteContent.homeHeroImage}
+                    onChange={(event) => setSiteContent(prev => ({ ...prev, homeHeroImage: event.target.value }))}
+                    placeholder="Image URL"
+                    className="w-full rounded-2xl border border-stone-100 bg-stone-50 p-4 text-sm outline-none focus:border-brand-primary"
+                  />
+                  <div className="mt-3 flex items-center gap-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Or upload</span>
+                    <input type="file" className="text-[10px] text-stone-400" accept="image/*" onChange={event => handleFileUpload(event, 'hero')} />
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-stone-100 bg-white p-6 shadow-sm md:p-8">
+              <div className="mb-8">
                 <h3 className="text-2xl font-serif">Entry Categories</h3>
                 <p className="mt-2 text-sm text-stone-500">These categories power the quick entry options on Home, Explore, and Customize.</p>
               </div>
@@ -798,6 +838,19 @@ export default function Admin() {
                       <textarea value={category.shortDescription} onChange={(event) => updateSiteCategory(index, 'shortDescription', event.target.value)} placeholder="Short description" className="min-h-24 rounded-2xl border border-stone-100 bg-white p-4 text-sm outline-none focus:border-brand-primary" />
                       <input value={category.search} onChange={(event) => updateSiteCategory(index, 'search', event.target.value)} placeholder="Search terms" className="rounded-2xl border border-stone-100 bg-white p-4 text-sm outline-none focus:border-brand-primary md:col-span-2" />
                       <input value={category.image} onChange={(event) => updateSiteCategory(index, 'image', event.target.value)} placeholder="Image URL" className="rounded-2xl border border-stone-100 bg-white p-4 text-sm outline-none focus:border-brand-primary md:col-span-2" />
+                      <div className="md:col-span-2 flex flex-col gap-3 rounded-2xl border border-stone-100 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-3">
+                          {category.image ? (
+                            <img src={category.image} alt={category.title} className="h-14 w-14 rounded-xl object-cover" referrerPolicy="no-referrer" />
+                          ) : (
+                            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-stone-100 text-stone-300">
+                              <ImageIcon size={22} />
+                            </div>
+                          )}
+                          <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Category image</span>
+                        </div>
+                        <input type="file" className="text-[10px] text-stone-400" accept="image/*" onChange={event => handleFileUpload(event, 'category', index)} />
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -852,21 +905,27 @@ export default function Admin() {
 
              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                <div className="bg-white p-8 rounded-[32px] border border-stone-100 shadow-sm">
-                 <h4 className="text-sm font-bold uppercase tracking-widest text-brand-primary mb-6">Market Trends</h4>
+                 <h4 className="text-sm font-bold uppercase tracking-widest text-brand-primary mb-6">Configured Services</h4>
                  <div className="space-y-4">
-                   {['Modern Tribalism', 'Teak Sustainability', 'Minimalist Portraits'].map(trend => (
-                     <div key={trend} className="flex justify-between items-center p-4 bg-stone-50 rounded-2xl">
-                       <span className="font-bold text-stone-700 text-sm">{trend}</span>
-                       <span className="text-[10px] bg-emerald-100 text-emerald-600 px-2 py-1 rounded-full font-black uppercase tracking-widest">Rising</span>
+                   {siteContent.services.length > 0 ? siteContent.services.slice(0, 5).map(service => (
+                     <div key={service.id} className="flex justify-between gap-4 p-4 bg-stone-50 rounded-2xl">
+                       <div>
+                         <span className="block font-bold text-stone-700 text-sm">{service.title}</span>
+                         <span className="mt-1 block text-[10px] font-bold uppercase tracking-widest text-stone-400">{service.category}</span>
+                       </div>
+                       <span className="shrink-0 text-[10px] bg-emerald-100 text-emerald-600 px-2 py-1 rounded-full font-black uppercase tracking-widest">Active</span>
                      </div>
-                   ))}
+                   )) : (
+                     <p className="rounded-2xl bg-stone-50 p-5 text-sm text-stone-400">No services configured yet.</p>
+                   )}
                  </div>
                </div>
                <div className="bg-white p-8 rounded-[32px] border border-stone-100 shadow-sm">
-                 <h4 className="text-sm font-bold uppercase tracking-widest text-stone-400 mb-6 font-mono">System Health</h4>
+                 <h4 className="text-sm font-bold uppercase tracking-widest text-stone-400 mb-6 font-mono">Catalog Readiness</h4>
                  <div className="flex flex-col items-center justify-center py-4">
-                   <div className="w-24 h-24 rounded-full border-8 border-stone-50 border-t-brand-primary flex items-center justify-center font-bold text-2xl">84%</div>
-                   <p className="mt-4 text-[10px] text-stone-400 text-center uppercase tracking-widest font-bold">Inventory Diversity Score</p>
+                   <div className="w-24 h-24 rounded-full border-8 border-stone-50 border-t-brand-primary flex items-center justify-center font-bold text-2xl">{catalogReadiness}%</div>
+                   <p className="mt-4 text-[10px] text-stone-400 text-center uppercase tracking-widest font-bold">{catalogReadyCount} of {products.length} catalog items complete</p>
+                   <p className="mt-3 max-w-xs text-center text-xs text-stone-400">A complete item has a name, description, image, and price.</p>
                  </div>
                </div>
              </div>

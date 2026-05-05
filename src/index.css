@@ -17,9 +17,69 @@
   body {
     @apply font-sans bg-brand-cream text-stone-900;
   }
+
+  .dark body {
+    background: #11100d;
+    color: #f5f5f0;
+  }
   
   h1, h2, h3, h4 {
     @apply font-serif;
+  }
+}
+
+@layer components {
+  .dark .bg-brand-cream,
+  .dark .bg-white {
+    background-color: #171612 !important;
+  }
+
+  .dark .bg-white\/80,
+  .dark .bg-white\/95 {
+    background-color: rgb(23 22 18 / 0.86) !important;
+  }
+
+  .dark .bg-stone-50,
+  .dark .bg-stone-50\/50,
+  .dark .bg-stone-100 {
+    background-color: #24221d !important;
+  }
+
+  .dark .text-stone-900,
+  .dark .text-stone-800,
+  .dark .text-stone-700,
+  .dark .text-stone-600 {
+    color: #f5f5f0 !important;
+  }
+
+  .dark .text-stone-500,
+  .dark .text-stone-400,
+  .dark .text-stone-300 {
+    color: #b8b2a5 !important;
+  }
+
+  .dark .border-stone-50,
+  .dark .border-stone-100,
+  .dark .border-stone-200,
+  .dark .border-brand-primary\/5,
+  .dark .border-brand-primary\/10 {
+    border-color: rgb(245 245 240 / 0.1) !important;
+  }
+
+  .dark input,
+  .dark textarea,
+  .dark select {
+    background-color: #1f1d19 !important;
+    color: #f5f5f0 !important;
+  }
+
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: #80796d !important;
+  }
+
+  .dark img {
+    color-scheme: light;
   }
 }
 

@@ -5,6 +5,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { Camera, ShoppingBag, Paintbrush, User as UserIcon, Search, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Tooltip from './Tooltip';
+import ThemeSwitch from './ThemeSwitch';
 
 export default function Header() {
   const [user, setUser] = useState<User | null>(null);
@@ -94,6 +95,10 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-2 md:gap-6">
+          <div className="hidden sm:block">
+            <ThemeSwitch />
+          </div>
+
           <div className="relative" ref={searchRef}>
             <button 
               onClick={() => setIsSearching(!isSearching)}
@@ -185,6 +190,9 @@ export default function Header() {
               </Link>
             </Tooltip>
             <div className="flex items-center gap-3">
+              <div className="sm:hidden">
+                <ThemeSwitch />
+              </div>
               {user?.photoURL ? (
                 <img src={user.photoURL} alt={user.displayName || ''} className="w-8 h-8 rounded-full border border-stone-100 shadow-sm" referrerPolicy="no-referrer" />
               ) : (

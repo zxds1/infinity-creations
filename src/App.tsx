@@ -1,10 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
-import { Facebook, Instagram, MessageCircle } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import ScrollToTop from './components/ScrollToTop';
+import SocialIcon from './components/SocialIcon';
 import Home from './pages/Home';
 import SpaceAnalyzer from './pages/SpaceAnalyzer';
 import Shop from './pages/Shop';
@@ -23,15 +23,26 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<PageWrapper><Home /></PageWrapper>} />
         <Route path="/analyzer" element={<PageWrapper><SpaceAnalyzer /></PageWrapper>} />
+        <Route path="/customize" element={<PageWrapper><SpaceAnalyzer /></PageWrapper>} />
         <Route path="/shop" element={<PageWrapper><Shop /></PageWrapper>} />
+        <Route path="/explore" element={<PageWrapper><Shop /></PageWrapper>} />
         <Route path="/branding" element={<PageWrapper><Branding /></PageWrapper>} />
+        <Route path="/business" element={<PageWrapper><Branding /></PageWrapper>} />
+        <Route path="/for-business" element={<PageWrapper><Branding /></PageWrapper>} />
         <Route path="/orders" element={<PageWrapper><Orders /></PageWrapper>} />
+        <Route path="/activity" element={<PageWrapper><Orders /></PageWrapper>} />
         <Route path="/wishlist" element={<PageWrapper><Wishlist /></PageWrapper>} />
+        <Route path="/saved" element={<PageWrapper><Wishlist /></PageWrapper>} />
         <Route path="/cart" element={<PageWrapper><Cart /></PageWrapper>} />
         <Route path="/admin" element={<PageWrapper><Admin /></PageWrapper>} />
+        <Route path="*" element={<PageWrapper><CatchAllRoute /></PageWrapper>} />
       </Routes>
     </AnimatePresence>
   );
+}
+
+function CatchAllRoute() {
+  return <Home />;
 }
 
 function PageWrapper({ children }: { children: React.ReactNode }) {
@@ -51,7 +62,7 @@ export default function App() {
   return (
     <Router>
       <ScrollToTop />
-      <div className="min-h-screen bg-brand-cream selection:bg-brand-primary/20 flex flex-col">
+      <div className="min-h-screen bg-brand-cream selection:bg-brand-primary/20 flex flex-col transition-colors">
         <Header />
         <div className="flex flex-1 flex-col lg:flex-row">
           <Sidebar />
@@ -71,16 +82,19 @@ export default function App() {
                 </p>
                 <div className="flex flex-wrap gap-3">
                   {socialLinks.map(link => {
-                    const Icon = link.label === 'Instagram' ? Instagram : link.label === 'Facebook' ? Facebook : MessageCircle;
                     return (
                       <a
                         key={link.label}
                         href={link.href}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-stone-100 px-4 text-[10px] font-black uppercase tracking-widest text-stone-500 transition-colors hover:border-brand-primary hover:text-brand-primary"
+                        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-stone-100 px-4 text-[10px] font-black uppercase tracking-widest text-stone-500 transition-colors hover:border-current"
+                        style={{
+                          color: link.brandColor,
+                          backgroundColor: link.id === 'x' || link.id === 'tiktok' ? '#ffffff' : `${link.brandColor}12`
+                        }}
                       >
-                        <Icon size={15} />
+                        <SocialIcon id={link.id} size={15} />
                         {link.label}
                       </a>
                     );
@@ -93,7 +107,8 @@ export default function App() {
                   <li><Link to="/shop" className="hover:text-brand-primary">Explore</Link></li>
                   <li><Link to="/analyzer" className="hover:text-brand-primary">Customize</Link></li>
                   <li><Link to="/branding" className="hover:text-brand-primary">For Business</Link></li>
-                  <li><Link to="/cart" className="hover:text-brand-primary">My Activity</Link></li>
+                  <li><Link to="/orders" className="hover:text-brand-primary">My Activity</Link></li>
+                  <li><Link to="/admin" className="hover:text-brand-primary">Admin</Link></li>
                 </ul>
               </div>
               <div>

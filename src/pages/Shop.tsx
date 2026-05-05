@@ -26,7 +26,7 @@ export default function Shop() {
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [products, setProducts] = useState<any[]>([]);
-  const [categories, setCategories] = useState<string[]>(["All", "Furniture", "Photography", "Art Mounts", "Jewelry"]);
+  const [categories, setCategories] = useState<string[]>(["All", ...defaultSiteContent.categories.map(category => category.title)]);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -64,7 +64,8 @@ export default function Shop() {
         setPriceRange({ min: 0, max: highestPrice });
 
         const categorySnap = await getDocs(collection(db, 'categories'));
-        const categoriesData = ["All", ...categorySnap.docs.map(doc => doc.data().name)];
+        const adminCategories = categorySnap.docs.map(doc => doc.data().name).filter(Boolean);
+        const categoriesData = ["All", ...(adminCategories.length > 0 ? adminCategories : siteContent.categories.map(category => category.title))];
         setCategories(categoriesData);
 
         if (auth.currentUser) {

@@ -45,8 +45,8 @@ export default function Home() {
     <div className="pb-12 lg:pb-24">
       <section className="relative min-h-[calc(100svh-64px)] overflow-hidden bg-stone-950 text-white md:min-h-[calc(100svh-80px)]">
         <img
-          src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&q=80&w=2200"
-          alt="Warm modern interior with curated furniture"
+          src={content.homeHeroImage}
+          alt="Design, print, and branding work"
           className="absolute inset-0 h-full w-full object-cover opacity-55"
           referrerPolicy="no-referrer"
         />

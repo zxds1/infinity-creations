@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { auth } from '../lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { Camera, ShoppingBag, Paintbrush, User as UserIcon, X, Facebook, Instagram, MessageCircle, ChevronRight, Settings, Heart } from 'lucide-react';
+import { Camera, ShoppingBag, Paintbrush, User as UserIcon, X, ChevronRight, Settings, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { socialLinks } from '../lib/socialLinks';
+import SocialIcon from './SocialIcon';
 
 export default function Sidebar() {
   const [user, setUser] = useState<User | null>(null);
@@ -34,6 +35,7 @@ export default function Sidebar() {
     { name: 'Customize', path: '/analyzer', icon: Camera },
     { name: 'Business', path: '/branding', icon: Paintbrush },
     { name: 'Saved', path: '/wishlist', icon: Heart },
+    { name: 'Activity', path: '/orders', icon: UserIcon },
     { name: 'Admin', path: '/admin', icon: Settings },
   ];
 
@@ -45,14 +47,14 @@ export default function Sidebar() {
   return (
     <>
       <nav className="bottom-safe fixed inset-x-0 bottom-0 z-[75] border-t border-stone-100 bg-white/95 px-2 pt-2 shadow-2xl shadow-stone-900/10 backdrop-blur-xl lg:hidden">
-        <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
+        <div className="mx-auto grid max-w-lg grid-cols-6 gap-1">
           {mobileNavItems.map((item) => {
             const active = location.pathname === item.path;
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-colors ${active ? 'bg-brand-primary text-brand-cream' : 'text-stone-400'}`}
+                className={`flex min-h-[58px] flex-col items-center justify-center gap-1 rounded-2xl text-[8px] font-black uppercase tracking-normal transition-colors sm:text-[9px] sm:tracking-widest ${active ? 'bg-brand-primary text-brand-cream' : 'text-stone-400'}`}
               >
                 <item.icon size={20} />
                 <span>{item.name}</span>
@@ -158,10 +160,20 @@ export default function Sidebar() {
               className="flex justify-center gap-6 pt-6 border-t border-stone-100 text-stone-300"
             >
               {socialLinks.map(link => {
-                const Icon = link.label === 'Instagram' ? Instagram : link.label === 'Facebook' ? Facebook : MessageCircle;
                 return (
-                  <a key={link.label} href={link.href} target="_blank" rel="noreferrer" aria-label={link.label} className="hover:text-brand-primary">
-                    <Icon size={18} />
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={link.label}
+                    className="flex h-8 w-8 items-center justify-center rounded-full transition-transform hover:-translate-y-0.5"
+                    style={{
+                      color: link.brandColor,
+                      backgroundColor: link.id === 'x' || link.id === 'tiktok' ? '#ffffff' : `${link.brandColor}12`
+                    }}
+                  >
+                    <SocialIcon id={link.id} size={18} />
                   </a>
                 );
               })}

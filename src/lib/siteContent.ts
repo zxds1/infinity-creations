@@ -24,6 +24,7 @@ export interface ServiceOffering {
 export interface SiteContent {
   homeHeroTitle: string;
   homeHeroSubtitle: string;
+  homeHeroImage: string;
   coreHeadline: string;
   coreSubtext: string;
   featuredTitle: string;
@@ -179,6 +180,7 @@ export const defaultServiceOfferings: ServiceOffering[] = [
 export const defaultSiteContent: SiteContent = {
   homeHeroTitle: 'What do you want to create today?',
   homeHeroSubtitle: 'Personal items, custom designs, or full business branding — we have got you covered.',
+  homeHeroImage: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&q=80&w=2200',
   coreHeadline: 'Design. Print. Brand. — All in One Place.',
   coreSubtext: 'From personal style to business identity, we help you create, customize, and bring your ideas to life.',
   featuredTitle: 'Popular creations',
