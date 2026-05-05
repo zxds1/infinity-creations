@@ -126,6 +126,7 @@ export function getProductInsightLabels(product: any, preferences: DesignPrefere
 
   if (score > 0) labels.push('Best match for your style');
   if (rating >= 4.7) labels.push('Popular in this category');
+  if (rating >= 4.4 && Number(product.price || 0) <= 20000) labels.push('Good value');
   if (stock > 0 && stock <= 3) labels.push('Limited availability');
   labels.push(`Compared ${Math.max(3, (index + 2) * 4)} times`);
 

@@ -398,6 +398,44 @@ export default function Cart() {
                     <p className="text-sm text-stone-400">The backend recalculates your cart before creating an order. The client total is display-only.</p>
                   </div>
 
+                  <div className="rounded-3xl border border-stone-100 bg-stone-50 p-6">
+                    <div className="mb-5 flex items-center justify-between gap-4">
+                      <div>
+                        <h3 className="font-bold text-stone-900">Before payment</h3>
+                        <p className="text-xs text-stone-400 mt-1">Review the amount, fulfiller, and delivery expectation.</p>
+                      </div>
+                      <ShieldCheck size={22} className="text-brand-primary" />
+                    </div>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between gap-4">
+                        <span className="text-stone-500">Items</span>
+                        <span className="font-bold text-stone-900">{items.length}</span>
+                      </div>
+                      <div className="flex justify-between gap-4">
+                        <span className="text-stone-500">Subtotal</span>
+                        <span className="font-bold text-stone-900">KSH {total}</span>
+                      </div>
+                      <div className="flex justify-between gap-4">
+                        <span className="text-stone-500">Estimated delivery</span>
+                        <span className="font-bold text-stone-900">KSH 500</span>
+                      </div>
+                      <div className="flex justify-between gap-4 border-t border-stone-200 pt-3">
+                        <span className="font-bold text-stone-900">Total</span>
+                        <span className="font-bold text-brand-primary">KSH {total + 500}</span>
+                      </div>
+                    </div>
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-2xl bg-white p-4">
+                        <span className="block text-[10px] font-black uppercase tracking-widest text-stone-400">Fulfilled by</span>
+                        <span className="mt-1 block text-sm font-bold text-stone-800">Maridadi Creations</span>
+                      </div>
+                      <div className="rounded-2xl bg-white p-4">
+                        <span className="block text-[10px] font-black uppercase tracking-widest text-stone-400">Delivery time</span>
+                        <span className="mt-1 block text-sm font-bold text-stone-800">3-7 business days</span>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[
                       { id: 'mpesa', label: 'M-Pesa', description: 'STK push callback verified' },
@@ -432,6 +470,23 @@ export default function Cart() {
                               <span className="block text-[10px] font-black uppercase tracking-widest text-stone-400">Exact amount</span>
                               <span className="font-bold">KSH {checkoutResult.amounts.total}</span>
                             </div>
+                            <div className="rounded-2xl bg-white p-4">
+                              <span className="block text-[10px] font-black uppercase tracking-widest text-stone-400">Status</span>
+                              <span className="font-bold uppercase text-brand-primary">{checkoutResult.paymentStatus}</span>
+                            </div>
+                            <div className="rounded-2xl bg-white p-4">
+                              <span className="block text-[10px] font-black uppercase tracking-widest text-stone-400">Next step</span>
+                              <span className="font-bold">Complete {paymentMethod === 'mpesa' ? 'M-Pesa' : 'card'} payment</span>
+                            </div>
+                          </div>
+                          <div className="mt-5 rounded-2xl bg-white p-4">
+                            <p className="text-sm font-bold text-stone-900">What happens next</p>
+                            <p className="mt-1 text-xs leading-relaxed text-stone-500">
+                              After provider callback verification, the order moves from pending payment to paid, then processing. Track status from Activity.
+                            </p>
+                            <Link to="/orders" className="mt-4 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-brand-primary">
+                              Track in Activity <ArrowRight size={14} />
+                            </Link>
                           </div>
                         </div>
                       </div>

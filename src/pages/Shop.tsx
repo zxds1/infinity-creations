@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShoppingBag, Star, Plus, MapPin, Package, Heart, Truck, Info, Minus, Check, Search, SlidersHorizontal, ShieldCheck, Store, Sparkles, ArrowRight } from 'lucide-react';
+import { ShoppingBag, Star, Plus, MapPin, Package, Heart, Info, Minus, Check, Search, SlidersHorizontal, ShieldCheck, Store, Sparkles, ArrowRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -18,6 +18,8 @@ export default function Shop() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState(searchParams.get('query') || '');
   const [priceFilter, setPriceFilter] = useState('All');
+  const [sortMode, setSortMode] = useState('Recommended');
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>(["All", "Furniture", "Photography", "Art Mounts", "Jewelry"]);
@@ -113,10 +115,25 @@ export default function Shop() {
       .includes(q);
   };
 
+  const getValueScore = (product: any) => {
+    const rating = Number(product.rating || 0);
+    const price = Math.max(Number(product.price || 1), 1);
+    return rating / price;
+  };
+
+  const getQualityScore = (product: any) => {
+    const rating = Number(product.rating || 0);
+    const stock = Number(product.stockQuantity ?? 8);
+    return rating + (stock > 0 ? 0.1 : 0);
+  };
+
   const filteredProducts = products.filter(product => {
     const categoryMatch = activeCategory === "All" || product.category === activeCategory;
     return categoryMatch && priceMatches(product) && textMatches(product);
   }).slice().sort((a, b) => {
+    if (sortMode === 'Price low') return Number(a.price || 0) - Number(b.price || 0);
+    if (sortMode === 'Price high') return Number(b.price || 0) - Number(a.price || 0);
+    if (sortMode === 'Popular') return Number(b.rating || 0) - Number(a.rating || 0);
     const scoreDelta = getProductPreferenceScore(b, preferences) - getProductPreferenceScore(a, preferences);
     return scoreDelta || Number(b.rating || 0) - Number(a.rating || 0);
   });
@@ -124,6 +141,14 @@ export default function Shop() {
   const comparedProducts = compareIds
     .map(id => products.find(product => product.id === id))
     .filter(Boolean);
+
+  const bestValueProduct = comparedProducts.length > 0
+    ? comparedProducts.slice().sort((a: any, b: any) => getValueScore(b) - getValueScore(a))[0]
+    : null;
+
+  const bestQualityProduct = comparedProducts.length > 0
+    ? comparedProducts.slice().sort((a: any, b: any) => getQualityScore(b) - getQualityScore(a))[0]
+    : null;
 
   const handleProductClick = (product: any) => {
     setSelectedProduct(product);
@@ -146,6 +171,7 @@ export default function Shop() {
     const exists = compareIds.includes(product.id);
     const next = exists ? compareIds.filter(id => id !== product.id) : [...compareIds, product.id].slice(-4);
     setCompareIds(next);
+    if (exists && next.length < 2) setIsCompareOpen(false);
     trackEvent({
       eventType: 'compare',
       productId: product.id,
@@ -318,7 +344,7 @@ export default function Shop() {
       </div>
 
       <div className="sticky top-20 z-40 mb-12 rounded-[28px] border border-stone-100 bg-brand-cream/95 p-3 backdrop-blur-xl shadow-sm">
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_auto_auto] lg:items-center">
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_auto_auto_auto] xl:items-center">
           <div className="flex min-h-12 items-center gap-3 rounded-2xl bg-white px-4">
             <Search size={18} className="text-stone-400" />
             <input
@@ -352,9 +378,21 @@ export default function Shop() {
               </button>
             ))}
           </div>
+
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {['Recommended', 'Popular', 'Price low', 'Price high'].map(mode => (
+              <button
+                key={mode}
+                onClick={() => setSortMode(mode)}
+                className={`min-h-12 whitespace-nowrap rounded-2xl px-4 text-[10px] font-black uppercase tracking-widest transition-all ${sortMode === mode ? 'bg-white text-brand-primary shadow-sm' : 'bg-white/60 text-stone-500 hover:text-brand-primary'}`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 px-1 text-[10px] font-black uppercase tracking-widest text-stone-400">
-          <span>{filteredProducts.length} result{filteredProducts.length === 1 ? '' : 's'} in {activeCategory}</span>
+          <span>{filteredProducts.length} result{filteredProducts.length === 1 ? '' : 's'} in {activeCategory} · sorted by {sortMode}</span>
           <span className="inline-flex items-center gap-2"><MapPin size={13} /> Nairobi availability shown on details</span>
         </div>
       </div>
@@ -502,6 +540,109 @@ export default function Shop() {
       )}
 
       <AnimatePresence>
+        {isCompareOpen && comparedProducts.length >= 2 && (
+          <div className="fixed inset-0 z-[85] flex items-end justify-center p-4 md:items-center">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsCompareOpen(false)}
+              className="absolute inset-0 bg-stone-950/50 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 28, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 28, scale: 0.98 }}
+              className="relative z-10 max-h-[88vh] w-full max-w-6xl overflow-hidden rounded-[36px] bg-white shadow-2xl"
+            >
+              <div className="flex items-start justify-between gap-6 border-b border-stone-100 p-6">
+                <div>
+                  <div className="mb-2 text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">Compare options</div>
+                  <h2 className="text-3xl font-serif">Choose with less guessing.</h2>
+                  <p className="mt-2 max-w-2xl text-sm text-stone-500">Side-by-side price, rating, availability, and fit cues from the selected products.</p>
+                </div>
+                <button
+                  onClick={() => setIsCompareOpen(false)}
+                  className="rounded-full bg-stone-50 p-3 text-stone-400 hover:text-brand-primary"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="grid gap-4 border-b border-stone-100 p-6 md:grid-cols-2">
+                {bestValueProduct && (
+                  <div className="rounded-3xl bg-brand-primary/5 p-5">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-brand-primary">Best for value</div>
+                    <div className="mt-2 flex items-center gap-3">
+                      <img src={(bestValueProduct as any).image} alt={(bestValueProduct as any).name} className="h-14 w-14 rounded-2xl object-cover" referrerPolicy="no-referrer" />
+                      <div>
+                        <div className="font-bold text-stone-900">{(bestValueProduct as any).name}</div>
+                        <div className="text-xs text-stone-500">Strong rating for the price.</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {bestQualityProduct && (
+                  <div className="rounded-3xl bg-stone-50 p-5">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-stone-500">Best for quality</div>
+                    <div className="mt-2 flex items-center gap-3">
+                      <img src={(bestQualityProduct as any).image} alt={(bestQualityProduct as any).name} className="h-14 w-14 rounded-2xl object-cover" referrerPolicy="no-referrer" />
+                      <div>
+                        <div className="font-bold text-stone-900">{(bestQualityProduct as any).name}</div>
+                        <div className="text-xs text-stone-500">Highest rating and availability signal.</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="overflow-auto p-6">
+                <div className="min-w-[760px]">
+                  <div className="grid gap-3" style={{ gridTemplateColumns: `160px repeat(${comparedProducts.length}, minmax(150px, 1fr))` }}>
+                    <div />
+                    {comparedProducts.map((product: any) => (
+                      <div key={product.id} className="rounded-3xl bg-stone-50 p-3">
+                        <img src={product.image} alt={product.name} className="mb-3 h-28 w-full rounded-2xl object-cover" referrerPolicy="no-referrer" />
+                        <div className="line-clamp-2 min-h-10 font-bold text-stone-900">{product.name}</div>
+                        <button
+                          onClick={() => {
+                            setIsCompareOpen(false);
+                            handleProductClick(product);
+                          }}
+                          className="mt-3 text-[10px] font-black uppercase tracking-widest text-brand-primary"
+                        >
+                          View details
+                        </button>
+                      </div>
+                    ))}
+
+                    {[
+                      ['Price', (product: any) => `KSH ${product.price}`],
+                      ['Rating', (product: any) => `${product.rating || 'New'} / 5`],
+                      ['Category', (product: any) => product.category || 'Product'],
+                      ['Availability', (product: any) => getAvailability(product)],
+                      ['Seller', (product: any) => getSellerName(product)],
+                      ['Location', (product: any) => getProductLocation(product)],
+                      ['Key difference', (product: any, index: number) => getProductInsightLabels(product, preferences, index)[0]],
+                    ].map(([label, resolver]) => (
+                      <>
+                        <div key={`${label}-label`} className="rounded-2xl bg-stone-900 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white">
+                          {label as string}
+                        </div>
+                        {comparedProducts.map((product: any, index) => (
+                          <div key={`${product.id}-${label}`} className="rounded-2xl border border-stone-100 px-4 py-3 text-sm font-semibold text-stone-700">
+                            {(resolver as (product: any, index: number) => string)(product, index)}
+                          </div>
+                        ))}
+                      </>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
         {comparedProducts.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -532,7 +673,7 @@ export default function Shop() {
               <div className="flex gap-2">
                 {comparedProducts.length >= 2 && (
                   <button
-                    onClick={() => toast.success('Compare the selected prices, ratings, and availability in this bar.')}
+                    onClick={() => setIsCompareOpen(true)}
                     className="rounded-2xl bg-brand-primary px-5 py-3 text-[10px] font-black uppercase tracking-widest text-brand-cream"
                   >
                     Compare now
@@ -692,7 +833,7 @@ export default function Shop() {
                   <div className="mb-8 border-y border-stone-100 py-6">
                     <div className="mb-4 flex items-center justify-between gap-4">
                       <h3 className="text-lg font-bold">Compare with similar</h3>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Decision help</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">People also viewed</span>
                     </div>
                     <div className="grid gap-3">
                       {similarProducts.map(product => (
