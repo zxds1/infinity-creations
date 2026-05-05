@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { auth, db, collection, getDocs, query, limit } from '../lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { Camera, ShoppingBag, Paintbrush, User as UserIcon, Search, Sparkles } from 'lucide-react';
+import { Camera, ShoppingBag, Paintbrush, User as UserIcon, Search, Sparkles, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Tooltip from './Tooltip';
 import ThemeSwitch from './ThemeSwitch';
@@ -11,6 +11,7 @@ import LogoMark from './LogoMark';
 export default function Header() {
   const [user, setUser] = useState<User | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{ products: any[], services: any[] }>({ products: [], services: [] });
   const location = useLocation();
@@ -96,6 +97,13 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-2 md:gap-6">
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="lg:hidden min-h-11 min-w-11 rounded-full p-3 text-stone-400 hover:text-brand-primary hover:bg-stone-50 transition-all"
+          >
+            {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
+
           <div className="hidden sm:block">
             <ThemeSwitch />
           </div>
@@ -183,6 +191,35 @@ export default function Header() {
               )}
             </AnimatePresence>
           </div>
+
+          {/* Mobile Menu */}
+          <AnimatePresence>
+            {isMobileMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                className="fixed left-3 right-3 top-16 mt-2 max-h-[75vh] overflow-hidden rounded-3xl border border-stone-100 bg-white shadow-2xl lg:hidden"
+              >
+                <div className="p-4 space-y-4">
+                  {navItems.map((item) => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={`block py-3 px-4 rounded-xl text-sm font-bold uppercase tracking-widest transition-all ${
+                        location.pathname === item.path
+                          ? 'bg-brand-primary text-white'
+                          : 'text-stone-700 hover:bg-stone-50'
+                      }`}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div className="flex items-center gap-2 md:gap-4">
             <Tooltip content="My Activity">
