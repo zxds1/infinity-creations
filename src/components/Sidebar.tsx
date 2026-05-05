@@ -1,30 +1,20 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { auth, db, doc, getDocFromServer } from '../lib/firebase';
+import { auth } from '../lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { Camera, ShoppingBag, Paintbrush, User as UserIcon, X, Facebook, Instagram, Twitter, ChevronRight, Settings, Heart } from 'lucide-react';
+import { Camera, ShoppingBag, Paintbrush, User as UserIcon, X, Facebook, Instagram, MessageCircle, ChevronRight, Settings, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { socialLinks } from '../lib/socialLinks';
 
 export default function Sidebar() {
   const [user, setUser] = useState<User | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
-      if (!u) {
-        setIsAdmin(false);
-        return;
-      }
-      try {
-        const adminSnap = await getDocFromServer(doc(db, 'admins', u.uid));
-        setIsAdmin(adminSnap.exists());
-      } catch {
-        setIsAdmin(false);
-      }
     });
     return () => unsubscribe();
   }, []);
@@ -36,6 +26,7 @@ export default function Sidebar() {
     { name: 'Saved', path: '/wishlist', icon: Heart },
     { name: 'Cart', path: '/cart', icon: ShoppingBag },
     { name: 'My Activity', path: '/orders', icon: UserIcon },
+    { name: 'Admin', path: '/admin', icon: Settings },
   ];
 
   const mobileNavItems = [
@@ -43,7 +34,7 @@ export default function Sidebar() {
     { name: 'Customize', path: '/analyzer', icon: Camera },
     { name: 'Business', path: '/branding', icon: Paintbrush },
     { name: 'Saved', path: '/wishlist', icon: Heart },
-    { name: 'Activity', path: '/orders', icon: UserIcon },
+    { name: 'Admin', path: '/admin', icon: Settings },
   ];
 
   const sidebarVariants = {
@@ -141,28 +132,6 @@ export default function Sidebar() {
             </Link>
           ))}
 
-          {isAdmin && (
-            <Link
-              to="/admin"
-              className={`flex items-center gap-4 p-3 rounded-2xl transition-all ${location.pathname === '/admin' ? 'bg-stone-900 text-white shadow-lg' : 'text-stone-400 hover:bg-stone-50'}`}
-            >
-              <div className="min-w-[24px] flex items-center justify-center">
-                <Settings size={24} />
-              </div>
-              <AnimatePresence>
-                {isExpanded && (
-                  <motion.span
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    className="font-bold text-sm tracking-widest uppercase whitespace-nowrap"
-                  >
-                    Admin
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </Link>
-          )}
         </nav>
 
         <div className="mt-auto space-y-6">
@@ -188,9 +157,14 @@ export default function Sidebar() {
               animate={{ opacity: 1 }}
               className="flex justify-center gap-6 pt-6 border-t border-stone-100 text-stone-300"
             >
-              <Facebook size={18} className="hover:text-brand-primary cursor-pointer" />
-              <Instagram size={18} className="hover:text-brand-primary cursor-pointer" />
-              <Twitter size={18} className="hover:text-brand-primary cursor-pointer" />
+              {socialLinks.map(link => {
+                const Icon = link.label === 'Instagram' ? Instagram : link.label === 'Facebook' ? Facebook : MessageCircle;
+                return (
+                  <a key={link.label} href={link.href} target="_blank" rel="noreferrer" aria-label={link.label} className="hover:text-brand-primary">
+                    <Icon size={18} />
+                  </a>
+                );
+              })}
             </motion.div>
           )}
         </div>

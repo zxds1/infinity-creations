@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
+import { Facebook, Instagram, MessageCircle } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import ScrollToTop from './components/ScrollToTop';
@@ -12,6 +13,7 @@ import Orders from './pages/Orders';
 import Admin from './pages/Admin';
 import Wishlist from './pages/Wishlist';
 import Cart from './pages/Cart';
+import { socialLinks } from './lib/socialLinks';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -67,7 +69,23 @@ export default function App() {
                 <p className="text-stone-400 max-w-sm leading-relaxed mb-8">
                   Design, print, and branding services for personal style, spaces, devices, and businesses.
                 </p>
-                <p className="text-sm font-bold text-stone-500 uppercase tracking-widest">Message us @Maridadi Creations</p>
+                <div className="flex flex-wrap gap-3">
+                  {socialLinks.map(link => {
+                    const Icon = link.label === 'Instagram' ? Instagram : link.label === 'Facebook' ? Facebook : MessageCircle;
+                    return (
+                      <a
+                        key={link.label}
+                        href={link.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-stone-100 px-4 text-[10px] font-black uppercase tracking-widest text-stone-500 transition-colors hover:border-brand-primary hover:text-brand-primary"
+                      >
+                        <Icon size={15} />
+                        {link.label}
+                      </a>
+                    );
+                  })}
+                </div>
               </div>
               <div>
                 <h4 className="font-bold uppercase tracking-widest text-xs text-stone-900 mb-6">Explore</h4>
@@ -84,6 +102,7 @@ export default function App() {
                   <li>Nairobi, Kenya</li>
                   <li>hello@maridadicreations.com</li>
                   <li>+254 700 000 000</li>
+                  <li><a href={socialLinks[0].href} target="_blank" rel="noreferrer" className="font-bold text-brand-primary hover:text-stone-900">Message us @Maridadi Creations</a></li>
                 </ul>
               </div>
             </div>

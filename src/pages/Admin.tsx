@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { db, auth, collection, getDocs, getDocFromServer, addDoc, updateDoc, deleteDoc, doc, query, orderBy, setDoc } from '../lib/firebase';
-import { Package, ShoppingBag, Paintbrush, Plus, Trash2, Edit3, Settings, CheckCircle2, Truck, XCircle, Clock, Sparkles, TrendingUp, Users, DollarSign, RefreshCw, Bike, Zap, Home, Camera, Heart, Star, Type } from 'lucide-react';
+import { db, collection, getDocs, getDocFromServer, addDoc, updateDoc, deleteDoc, doc, query, orderBy, setDoc } from '../lib/firebase';
+import { Package, ShoppingBag, Paintbrush, Plus, Trash2, Edit3, Settings, CheckCircle2, Truck, Clock, Sparkles, TrendingUp, Users, DollarSign, RefreshCw, Bike, Zap, Home, Camera, Heart, Star, Type } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'react-hot-toast';
 import { generateAdminInsights } from '../services/geminiService';
 import ReactMarkdown from 'react-markdown';
-import { onAuthStateChanged } from 'firebase/auth';
 import { defaultSiteContent, mergeSiteContent, type ServiceOffering, type SiteContent } from '../lib/siteContent';
 
 const emptyServiceForm = {
@@ -25,11 +24,8 @@ export default function Admin() {
   const [orders, setOrders] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [aiInsights, setAiInsights] = useState<string>("");
   const [generatingInsights, setGeneratingInsights] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [siteContent, setSiteContent] = useState<SiteContent>(defaultSiteContent);
   const [savingContent, setSavingContent] = useState(false);
 
@@ -71,31 +67,7 @@ export default function Admin() {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        setIsAdmin(false);
-        setAuthChecked(true);
-        return;
-      }
-
-      try {
-        const adminSnap = await getDocFromServer(doc(db, 'admins', user.uid));
-        setIsAdmin(adminSnap.exists());
-      } catch {
-        setIsAdmin(false);
-      } finally {
-        setAuthChecked(true);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (!isAdmin) return;
-
     const fetchData = async () => {
-      setLoading(true);
       try {
         const orderSnap = await getDocs(query(collection(db, 'orders'), orderBy('createdAt', 'desc')));
         setOrders(orderSnap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -110,12 +82,10 @@ export default function Admin() {
         setSiteContent(mergeSiteContent(contentSnap.exists() ? contentSnap.data() as Partial<SiteContent> : null));
       } catch (err) {
         toast.error("Failed to fetch admin data");
-      } finally {
-        setLoading(false);
       }
     };
     fetchData();
-  }, [isAdmin]);
+  }, []);
 
   const updateOrderStatus = async (orderId: string, status: string, trackingNumber?: string) => {
     try {
@@ -278,25 +248,6 @@ export default function Admin() {
       setSavingContent(false);
     }
   };
-
-  if (!authChecked) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
-        <div className="w-12 h-12 rounded-full border-2 border-brand-primary/10 border-t-brand-primary animate-spin mb-6" />
-        <p className="text-stone-500">Checking access...</p>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
-        <XCircle size={64} className="text-red-400 mb-6" />
-        <h1 className="text-4xl font-serif mb-4">Admin access required</h1>
-        <p className="text-stone-500">Sign in with an approved Maridadi admin account to manage the store.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="flex-1 bg-stone-50/50 min-h-screen">
