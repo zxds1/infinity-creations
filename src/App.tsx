@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import ScrollToTop from './components/ScrollToTop';
 import SocialIcon from './components/SocialIcon';
+import PWAInstallBanner from './components/PWAInstallBanner';
 import Home from './pages/Home';
 import SpaceAnalyzer from './pages/SpaceAnalyzer';
 import Shop from './pages/Shop';
@@ -77,6 +78,7 @@ export default function App() {
           <main className="flex-1 pb-mobile-nav lg:pb-0 lg:pl-20 transition-all duration-300">
             <AnimatedRoutes />
             <Toaster position="bottom-right" />
+            <PWAInstallBanner />
             
             <footer className="mt-8 border-t border-brand-primary/10 bg-white py-12 lg:mt-12 lg:py-24">
             <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 gap-10 md:grid-cols-4 md:gap-12">
