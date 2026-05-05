@@ -35,9 +35,9 @@ export default function PhotoPrintingPage() {
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
-    name: 'Maridadi Creations - Photo Printing Services Nairobi',
+    name: 'Infinity Creations - Photo Printing Services Nairobi',
     description: 'Professional photo printing services in Nairobi. Canvas prints, photo mounts, wall art printing. High quality, affordable pricing.',
-    url: 'https://maridadi.co.ke/photo-printing-nairobi',
+    url: 'https://infinitycreations.co.ke/photo-printing-nairobi',
     areaServed: { '@type': 'City', name: 'Nairobi', 'areaServed': 'Kenya' },
     priceRange: 'KES 500 - KES 50000',
   };
@@ -55,7 +55,7 @@ export default function PhotoPrintingPage() {
           'large format printing',
           'photo mount price Nairobi',
         ]}
-        canonicalUrl="https://maridadi.co.ke/photo-printing-nairobi"
+        canonicalUrl="https://infinitycreations.co.ke/photo-printing-nairobi"
         schema={schema}
       />
 
@@ -151,7 +151,7 @@ export default function PhotoPrintingPage() {
       {/* Why Choose */}
       <section className="bg-stone-50 py-16 lg:py-24">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-serif font-bold text-brand-primary mb-12">Why Photo Printing with Maridadi?</h2>
+          <h2 className="text-3xl md:text-4xl font-serif font-bold text-brand-primary mb-12">Why Photo Printing with Infinity?</h2>
           
           <div className="grid md:grid-cols-3 gap-8">
             {[

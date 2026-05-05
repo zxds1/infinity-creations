@@ -9,6 +9,7 @@ import ScrollToTop from './components/ScrollToTop';
 import SocialIcon from './components/SocialIcon';
 import PWAInstallBanner from './components/PWAInstallBanner';
 import LogoMark from './components/LogoMark';
+import StartupSplash from './components/StartupSplash';
 import Home from './pages/Home';
 import SpaceAnalyzer from './pages/SpaceAnalyzer';
 import Shop from './pages/Shop';
@@ -110,6 +111,7 @@ export default function App() {
   return (
     <HelmetProvider>
       <Router>
+        <StartupSplash />
         <ScrollToTop />
         <div className="min-h-screen bg-brand-cream selection:bg-brand-primary/20 flex flex-col transition-colors">
           <Header />
@@ -125,7 +127,7 @@ export default function App() {
               <div className="col-span-1 md:col-span-2">
                 <div className="flex items-center gap-2 mb-6">
                   <LogoMark className="h-8 w-8 rounded-full" />
-                  <span className="font-serif text-xl font-semibold tracking-tight text-brand-primary">Maridadi Creations</span>
+                  <span className="font-serif text-xl font-semibold tracking-tight text-brand-primary">Infinity Creations</span>
                 </div>
                 <p className="text-stone-400 max-w-sm leading-relaxed mb-8">
                   Design, print, and branding services for personal style, spaces, devices, and businesses.
@@ -168,13 +170,13 @@ export default function App() {
                   <li><a href={`mailto:${siteContent.contact.email}`} className="hover:text-brand-primary">{siteContent.contact.email}</a></li>
                   <li><a href={`tel:${siteContent.contact.phone.replace(/\s+/g, '')}`} className="hover:text-brand-primary">{siteContent.contact.phone}</a></li>
                   {footerSocialLinks[0] && (
-                    <li><a href={footerSocialLinks[0].href} target="_blank" rel="noreferrer" className="font-bold text-brand-primary hover:text-stone-900">Message us @Maridadi Creations</a></li>
+                    <li><a href={footerSocialLinks[0].href} target="_blank" rel="noreferrer" className="font-bold text-brand-primary hover:text-stone-900">Message us @Infinity Creations</a></li>
                   )}
                 </ul>
               </div>
             </div>
             <div className="max-w-7xl mx-auto px-4 mt-12 pt-8 border-t border-brand-primary/5 flex flex-col md:flex-row justify-between items-center gap-6 lg:mt-24 lg:pt-12">
-              <p className="text-xs text-stone-400 uppercase tracking-widest">© 2026 Maridadi Creations. All rights reserved.</p>
+              <p className="text-xs text-stone-400 uppercase tracking-widest">© 2026 Infinity Creations. All rights reserved.</p>
               <div className="flex gap-8 text-xs font-bold text-stone-400 uppercase tracking-widest">
                 <a href="#" className="hover:text-brand-primary transition-colors">Privacy Policy</a>
                 <a href="#" className="hover:text-brand-primary transition-colors">Terms of Service</a>

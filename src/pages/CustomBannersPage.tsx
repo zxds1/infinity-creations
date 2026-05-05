@@ -31,9 +31,9 @@ export default function CustomBannersPage() {
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
-    name: 'Maridadi Creations - Custom Banners Nairobi',
+    name: 'Infinity Creations - Custom Banners Nairobi',
     description: 'Professional custom banner design and printing services in Nairobi, Kenya',
-    url: 'https://maridadi.co.ke/custom-banners-nairobi',
+    url: 'https://infinitycreations.co.ke/custom-banners-nairobi',
     telephone: '+254712345678',
     areaServed: {
       '@type': 'City',
@@ -49,7 +49,7 @@ export default function CustomBannersPage() {
         title="Custom Banners Design & Printing in Nairobi"
         description="Professional custom banner printing in Nairobi. Wide vinyl banners, event banners, shop displays. Design included. Quick turnaround."
         keywords={['custom banners Nairobi', 'banner printing Kenya', 'vinyl banners', 'event banners Nairobi', 'shop banner design']}
-        canonicalUrl="https://maridadi.co.ke/custom-banners-nairobi"
+        canonicalUrl="https://infinitycreations.co.ke/custom-banners-nairobi"
         schema={schema}
       />
 

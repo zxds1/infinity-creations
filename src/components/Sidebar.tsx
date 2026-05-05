@@ -101,7 +101,7 @@ export default function Sidebar() {
                 exit={{ opacity: 0, x: -10 }}
                 className="font-serif text-xl font-semibold tracking-tight text-brand-primary whitespace-nowrap"
               >
-                Maridadi
+                Infinity
               </motion.span>
             )}
           </AnimatePresence>

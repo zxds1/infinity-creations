@@ -15,13 +15,13 @@ export default function SEOMeta({
   description,
   keywords = [],
   canonicalUrl,
-  ogImage = '/maridadi-icon.svg',
+  ogImage = '/infinity-icon.svg',
   ogType = 'website',
   schema,
 }: SEOMetaProps) {
   return (
     <Helmet>
-      <title>{title} | Maridadi Creations</title>
+      <title>{title} | Infinity Creations</title>
       <meta name="description" content={description} />
       {keywords.length > 0 && (
         <meta name="keywords" content={keywords.join(', ')} />

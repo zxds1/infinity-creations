@@ -17,31 +17,31 @@ export const defaultSocialLinks: SocialLink[] = [
   {
     id: 'instagram',
     label: 'Instagram',
-    href: 'https://www.instagram.com/maridadicreations/',
+    href: 'https://www.instagram.com/infinitycreations/',
     brandColor: '#E4405F'
   },
   {
     id: 'facebook',
     label: 'Facebook',
-    href: 'https://www.facebook.com/maridadicreations',
+    href: 'https://www.facebook.com/infinitycreations',
     brandColor: '#1877F2'
   },
   {
     id: 'tiktok',
     label: 'TikTok',
-    href: 'https://www.tiktok.com/@maridadicreations',
+    href: 'https://www.tiktok.com/@infinitycreations',
     brandColor: '#111111'
   },
   {
     id: 'x',
     label: 'X',
-    href: 'https://x.com/maridadicreations',
+    href: 'https://x.com/infinitycreations',
     brandColor: '#111111'
   },
   {
     id: 'linkedin',
     label: 'LinkedIn',
-    href: 'https://www.linkedin.com/company/maridadi-creations',
+    href: 'https://www.linkedin.com/company/infinity-creations',
     brandColor: '#0A66C2'
   }
 ];

@@ -33,8 +33,8 @@ export default function PhotoMountsPage() {
     '@type': 'Product',
     name: 'Custom Photo Mounts Kenya',
     description: 'Custom photo mounts in Nairobi - foam board mounts, wood mounts, acrylic displays',
-    url: 'https://maridadi.co.ke/photo-mounts-kenya',
-    brand: { '@type': 'Brand', name: 'Maridadi Creations' },
+    url: 'https://infinitycreations.co.ke/photo-mounts-kenya',
+    brand: { '@type': 'Brand', name: 'Infinity Creations' },
   };
 
   return (
@@ -43,7 +43,7 @@ export default function PhotoMountsPage() {
         title="Custom Photo Mounts Kenya | Photo Display Prints Nairobi"
         description="Custom photo mounts in Nairobi. Foam board, wood, and acrylic displays. Perfect for events, memories, and home decor."
         keywords={['photo mounts Kenya', 'photo mounts Nairobi', 'foam board mounts', 'photo displays', 'custom photo printing']}
-        canonicalUrl="https://maridadi.co.ke/photo-mounts-kenya"
+        canonicalUrl="https://infinitycreations.co.ke/photo-mounts-kenya"
         schema={schema}
       />
 

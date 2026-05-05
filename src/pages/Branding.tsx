@@ -82,8 +82,8 @@ export default function Branding() {
         sellerSignal: sellerProfile,
         createdAt: new Date().toISOString()
       };
-      const existing = JSON.parse(window.localStorage.getItem('maridadi.demoBrandingRequests') || '[]');
-      window.localStorage.setItem('maridadi.demoBrandingRequests', JSON.stringify([request, ...existing].slice(0, 20)));
+      const existing = JSON.parse(window.localStorage.getItem('infinity.demoBrandingRequests') || '[]');
+      window.localStorage.setItem('infinity.demoBrandingRequests', JSON.stringify([request, ...existing].slice(0, 20)));
       toast.success("Branding request saved in demo mode.");
       setDescription("");
       setImage(null);

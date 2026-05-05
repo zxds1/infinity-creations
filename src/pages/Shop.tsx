@@ -39,7 +39,7 @@ export default function Shop() {
   const [compareIds, setCompareIds] = useState<string[]>(() => {
     if (typeof window === 'undefined') return [];
     try {
-      return JSON.parse(window.localStorage.getItem('maridadi.compareIds') || '[]');
+      return JSON.parse(window.localStorage.getItem('infinity.compareIds') || '[]');
     } catch {
       return [];
     }
@@ -96,7 +96,7 @@ export default function Shop() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    window.localStorage.setItem('maridadi.compareIds', JSON.stringify(compareIds));
+    window.localStorage.setItem('infinity.compareIds', JSON.stringify(compareIds));
   }, [compareIds]);
 
   useEffect(() => {
@@ -106,7 +106,7 @@ export default function Shop() {
   }, [selectedProduct]);
 
   const getProductLocation = (product: any) => product.location || product.sellerLocation || 'Nairobi, Kenya';
-  const getSellerName = (product: any) => product.sellerName || product.seller || 'Maridadi Creations';
+  const getSellerName = (product: any) => product.sellerName || product.seller || 'Infinity Creations';
   const getAvailability = (product: any) => {
     const stock = Number(product.stockQuantity ?? 8);
     if (stock <= 0) return 'Made to order';

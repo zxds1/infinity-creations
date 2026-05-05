@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
-const THEME_KEY = 'maridadi.theme';
+const THEME_KEY = 'infinity.theme';
 const modes: ThemeMode[] = ['light', 'dark', 'system'];
 
 function getStoredTheme(): ThemeMode {

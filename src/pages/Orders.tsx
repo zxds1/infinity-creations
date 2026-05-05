@@ -344,7 +344,7 @@ export default function Orders() {
                           <h4 className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-4">Delivery Information</h4>
                           <div className="bg-stone-50 p-6 rounded-3xl">
                             <p className="text-sm leading-relaxed text-stone-600">
-                              {order.details.deliveryAddress || "Self collection at Maridadi Studio, Nairobi"}
+                              {order.details.deliveryAddress || "Self collection at Infinity Studio, Nairobi"}
                             </p>
                             {order.deliveryEstimate && (
                               <p className="mt-4 text-xs font-bold uppercase tracking-widest text-brand-primary">{order.deliveryEstimate}</p>

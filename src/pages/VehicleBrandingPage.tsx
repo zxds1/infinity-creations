@@ -31,9 +31,9 @@ export default function VehicleBrandingPage() {
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
-    name: 'Maridadi Creations - Vehicle Branding Nairobi',
+    name: 'Infinity Creations - Vehicle Branding Nairobi',
     description: 'Professional vehicle branding and wraps in Nairobi - boda boda branding, van wraps, truck advertising',
-    url: 'https://maridadi.co.ke/vehicle-branding-nairobi',
+    url: 'https://infinitycreations.co.ke/vehicle-branding-nairobi',
     areaServed: {
       '@type': 'City',
       name: 'Nairobi',
@@ -47,7 +47,7 @@ export default function VehicleBrandingPage() {
         title="Vehicle Branding & Wraps in Nairobi | Boda Boda Branding"
         description="Professional vehicle branding in Nairobi. Boda boda branding, van wraps, truck advertising. Custom designs. Fast application."
         keywords={['vehicle branding Nairobi', 'boda boda branding', 'van wraps Kenya', 'truck advertising', 'car branding Nairobi']}
-        canonicalUrl="https://maridadi.co.ke/vehicle-branding-nairobi"
+        canonicalUrl="https://infinitycreations.co.ke/vehicle-branding-nairobi"
         schema={schema}
       />
 

@@ -235,10 +235,10 @@ export default function Cart() {
   };
 
   const getIdempotencyKey = () => {
-    const existing = window.sessionStorage.getItem('maridadi.checkoutIdempotencyKey');
+    const existing = window.sessionStorage.getItem('infinity.checkoutIdempotencyKey');
     if (existing) return existing;
     const key = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    window.sessionStorage.setItem('maridadi.checkoutIdempotencyKey', key);
+    window.sessionStorage.setItem('infinity.checkoutIdempotencyKey', key);
     return key;
   };
 
@@ -449,7 +449,7 @@ export default function Cart() {
                     <div className="rounded-2xl bg-stone-50 p-5">
                       <Building2 size={20} className="text-brand-primary mb-3" />
                       <h3 className="font-bold text-sm">Fulfilled by</h3>
-                      <p className="text-xs text-stone-400 mt-1">Maridadi Creations, Nairobi, Kenya.</p>
+                      <p className="text-xs text-stone-400 mt-1">Infinity Creations, Nairobi, Kenya.</p>
                     </div>
                     <div className="rounded-2xl bg-stone-50 p-5">
                       <Phone size={20} className="text-brand-primary mb-3" />
@@ -505,7 +505,7 @@ export default function Cart() {
                     <div className="mt-5 grid gap-3 sm:grid-cols-2">
                       <div className="rounded-2xl bg-white p-4">
                         <span className="block text-[10px] font-black uppercase tracking-widest text-stone-400">Fulfilled by</span>
-                        <span className="mt-1 block text-sm font-bold text-stone-800">Maridadi Creations</span>
+                        <span className="mt-1 block text-sm font-bold text-stone-800">Infinity Creations</span>
                       </div>
                       <div className="rounded-2xl bg-white p-4">
                         <span className="block text-[10px] font-black uppercase tracking-widest text-stone-400">Delivery time</span>

@@ -439,7 +439,7 @@ export default function Admin() {
             <div>
               <div className="flex items-center gap-2 text-brand-primary font-bold uppercase tracking-[0.2em] text-[10px] mb-2">
                 <Settings size={14} className="animate-spin-slow" />
-                Maridadi Admin
+                Infinity Admin
               </div>
               <h1 className="text-4xl md:text-5xl font-serif italic font-light leading-tight">
                 Control <span className="not-italic font-bold">Center</span>

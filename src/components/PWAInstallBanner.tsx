@@ -35,7 +35,7 @@ export default function PWAInstallBanner() {
             <h3 className="font-bold text-sm md:text-base">Install App</h3>
           </div>
           <p className="text-xs md:text-sm text-brand-cream/90">
-            Get quick access to Maridadi Creations right from your home screen
+            Get quick access to Infinity Creations right from your home screen
           </p>
         </div>
         <button

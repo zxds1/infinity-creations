@@ -26,8 +26,8 @@ interface BehaviorEventInput {
   metadata?: Record<string, unknown>;
 }
 
-const PREFERENCE_KEY = 'maridadi.designPreferences';
-const GUEST_EVENTS_KEY = 'maridadi.guestEvents';
+const PREFERENCE_KEY = 'infinity.designPreferences';
+const GUEST_EVENTS_KEY = 'infinity.guestEvents';
 
 const STYLE_TERMS = ['minimalist', 'modern', 'rustic', 'luxury', 'traditional', 'contemporary', 'artisanal', 'scandinavian', 'bohemian'];
 const COLOR_TERMS = ['white', 'black', 'cream', 'green', 'blue', 'red', 'gold', 'brown', 'teak', 'oak', 'neutral', 'earth', 'terracotta'];

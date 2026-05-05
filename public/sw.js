@@ -1,9 +1,9 @@
-const CACHE_NAME = 'maridadi-v1';
+const CACHE_NAME = 'infinity-v1';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/maridadi-icon.svg'
+  '/infinity-icon.svg'
 ];
 
 // Install event - cache assets

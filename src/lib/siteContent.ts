@@ -207,10 +207,10 @@ export const defaultContactContent: ContactContent = {
   heading: 'Ready to start your custom piece?',
   subtext: 'Send your idea, photo, brand note, or size details and we will guide the next step.',
   location: 'Nairobi, Kenya',
-  email: 'hello@maridadicreations.com',
+  email: 'hello@infinitycreations.com',
   phone: '+254 700 000 000',
   ctaLabel: 'Message us',
-  ctaHref: 'mailto:hello@maridadicreations.com'
+  ctaHref: 'mailto:hello@infinitycreations.com'
 };
 
 export const defaultTestimonials: TestimonialContent[] = [

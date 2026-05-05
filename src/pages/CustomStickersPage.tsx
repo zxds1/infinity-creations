@@ -33,8 +33,8 @@ export default function CustomStickersPage() {
     '@type': 'Product',
     name: 'Custom Stickers Nairobi',
     description: 'Custom vinyl stickers in Nairobi - laptop stickers, waterproof stickers, branded stickers',
-    url: 'https://maridadi.co.ke/custom-stickers-nairobi',
-    brand: { '@type': 'Brand', name: 'Maridadi Creations' },
+    url: 'https://infinitycreations.co.ke/custom-stickers-nairobi',
+    brand: { '@type': 'Brand', name: 'Infinity Creations' },
   };
 
   return (
@@ -43,7 +43,7 @@ export default function CustomStickersPage() {
         title="Custom Stickers Nairobi | Laptop & Vinyl Stickers Kenya"
         description="Custom vinyl stickers in Nairobi. Laptop stickers, waterproof stickers, branded stickers. Design included. Fast production."
         keywords={['custom stickers Nairobi', 'laptop stickers Kenya', 'vinyl stickers', 'waterproof stickers Kenya', 'branded stickers']}
-        canonicalUrl="https://maridadi.co.ke/custom-stickers-nairobi"
+        canonicalUrl="https://infinitycreations.co.ke/custom-stickers-nairobi"
         schema={schema}
       />
 

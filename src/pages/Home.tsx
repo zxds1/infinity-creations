@@ -94,7 +94,7 @@ export default function Home() {
             transition={{ duration: 0.45, ease: 'easeOut' }}
             className="max-w-3xl"
           >
-            <p className="mb-3 text-[10px] font-black uppercase tracking-[0.24em] text-white/60 md:mb-4 md:text-[11px]">Maridadi Creations</p>
+            <p className="mb-3 text-[10px] font-black uppercase tracking-[0.24em] text-white/60 md:mb-4 md:text-[11px]">Infinity Creations</p>
             <h1 className="text-4xl font-semibold leading-[0.98] tracking-normal sm:text-5xl md:text-7xl lg:text-8xl">
               {content.coreHeadline}
             </h1>
@@ -323,7 +323,7 @@ export default function Home() {
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-5 py-10 md:grid-cols-[0.85fr_1.15fr] md:px-8 md:py-16">
           <div>
             <p className="mb-4 text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">Add testimonial</p>
-            <h2 className="text-3xl font-serif leading-tight md:text-5xl">Share your Maridadi result</h2>
+            <h2 className="text-3xl font-serif leading-tight md:text-5xl">Share your Infinity result</h2>
             <p className="mt-5 text-stone-500">Tell us what changed. Add before and after image links if you have them.</p>
           </div>
           <form onSubmit={submitTestimonial} className="grid grid-cols-1 gap-3 md:grid-cols-2">

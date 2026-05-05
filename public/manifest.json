@@ -1,6 +1,6 @@
 {
-  "name": "Maridadi Creations",
-  "short_name": "Maridadi",
+  "name": "Infinity Creations",
+  "short_name": "Infinity",
   "description": "Design, print, and branding services",
   "start_url": "/",
   "display": "standalone",
@@ -8,13 +8,13 @@
   "theme_color": "#5A5A40",
   "icons": [
     {
-      "src": "/maridadi-icon.svg",
+      "src": "/infinity-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/maridadi-icon.svg",
+      "src": "/infinity-icon.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"

@@ -33,8 +33,8 @@ export default function CustomJewelleryPage() {
     '@type': 'Product',
     name: 'Custom Jewellery Kenya',
     description: 'Custom jewellery design and creation in Nairobi - rings, necklaces, bracelets, personalized pieces',
-    url: 'https://maridadi.co.ke/custom-jewellery-kenya',
-    brand: { '@type': 'Brand', name: 'Maridadi Creations' },
+    url: 'https://infinitycreations.co.ke/custom-jewellery-kenya',
+    brand: { '@type': 'Brand', name: 'Infinity Creations' },
   };
 
   return (
@@ -43,7 +43,7 @@ export default function CustomJewelleryPage() {
         title="Custom Jewellery Kenya | Personalized Rings & Necklaces Nairobi"
         description="Custom jewellery design in Nairobi. Rings, necklaces, bracelets, personalized pieces. Expert craftsmanship. Bespoke designs."
         keywords={['custom jewellery Kenya', 'personalized rings Nairobi', 'custom necklaces', 'bridal jewellery Kenya', 'jewellery design']}
-        canonicalUrl="https://maridadi.co.ke/custom-jewellery-kenya"
+        canonicalUrl="https://infinitycreations.co.ke/custom-jewellery-kenya"
         schema={schema}
       />
 

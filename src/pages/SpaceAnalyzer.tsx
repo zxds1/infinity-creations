@@ -230,7 +230,7 @@ export default function SpaceAnalyzer() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Maridadi Style Recommendations',
+          title: 'Infinity Style Recommendations',
           text: result.substring(0, 500) + '...',
           url: window.location.href,
         });
@@ -257,7 +257,7 @@ export default function SpaceAnalyzer() {
     "Matching print and branding options...",
     "Finding suitable materials...",
     "Preparing custom direction...",
-    "Choosing matching Maridadi services...",
+    "Choosing matching Infinity services...",
     "Finalizing recommendations..."
   ];
 
@@ -335,8 +335,8 @@ export default function SpaceAnalyzer() {
           }
         }
       } else if (typeof window !== 'undefined') {
-        const existing = JSON.parse(window.localStorage.getItem('maridadi.demoDesignRequests') || '[]');
-        window.localStorage.setItem('maridadi.demoDesignRequests', JSON.stringify([
+        const existing = JSON.parse(window.localStorage.getItem('infinity.demoDesignRequests') || '[]');
+        window.localStorage.setItem('infinity.demoDesignRequests', JSON.stringify([
           {
             mediaCount: mediaFiles.length,
             prompt: promptContext,
@@ -723,7 +723,7 @@ export default function SpaceAnalyzer() {
 
                 <div className="mt-12 bg-brand-primary/5 p-8 rounded-3xl border border-brand-primary/10">
                   <h4 className="text-xl mb-4 font-serif text-brand-primary">Ready to make it?</h4>
-                  <p className="text-stone-600 mb-6 text-sm">Send the request and Maridadi can design, print, or brand the final piece for you.</p>
+                  <p className="text-stone-600 mb-6 text-sm">Send the request and Infinity can design, print, or brand the final piece for you.</p>
                   <div className="flex flex-wrap gap-3">
                     <Link to="/cart" className="bg-brand-primary text-brand-cream px-6 py-3 rounded-full text-sm font-bold flex items-center gap-2">
                       Proceed with this design <ChevronRight size={16} />

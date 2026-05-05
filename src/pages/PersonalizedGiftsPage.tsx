@@ -37,8 +37,8 @@ export default function PersonalizedGiftsPage() {
     '@type': 'Product',
     name: 'Personalized Gifts Kenya',
     description: 'Custom personalized gifts in Nairobi. Engraved jewellery, photo gifts, custom items. Perfect for every occasion.',
-    url: 'https://maridadi.co.ke/personalized-gifts-kenya',
-    brand: { '@type': 'Brand', name: 'Maridadi Creations' },
+    url: 'https://infinitycreations.co.ke/personalized-gifts-kenya',
+    brand: { '@type': 'Brand', name: 'Infinity Creations' },
   };
 
   return (
@@ -55,7 +55,7 @@ export default function PersonalizedGiftsPage() {
           'corporate gifts Nairobi',
           'custom jewellery gifts',
         ]}
-        canonicalUrl="https://maridadi.co.ke/personalized-gifts-kenya"
+        canonicalUrl="https://infinitycreations.co.ke/personalized-gifts-kenya"
         schema={schema}
       />
 

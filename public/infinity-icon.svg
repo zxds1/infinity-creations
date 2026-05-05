@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Infinity Creations</title>
+  <desc id="desc">Animated-ready infinity mark for design, print, and branding</desc>
+  <rect width="512" height="512" rx="112" fill="#10100D"/>
+  <circle cx="256" cy="256" r="174" fill="#F5F5F0"/>
+  <path d="M146 256c31-62 76-92 123-49l34 31c34 31 63 23 82-13 12-23 5-51-19-65-30-17-68-1-108 65l-12 20c-41 69-83 103-124 80-34-19-43-63-21-96 25-38 73-45 124-1l36 31c38 33 68 28 91-17" fill="none" stroke="#5A5A40" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M151 350h210" stroke="#D7A64A" stroke-width="22" stroke-linecap="round"/>
+  <path d="M365 350l31-31 24 24-31 31-34 11 10-35z" fill="#D7A64A"/>
+  <path d="M152 139h208" stroke="#D7A64A" stroke-width="18" stroke-linecap="round"/>
+</svg>

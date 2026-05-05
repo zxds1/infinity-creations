@@ -1,9 +1,9 @@
 export const DEMO_USER_ID = 'demo-client';
 
-const CART_KEY = 'maridadi.demoCart';
-const WISHLIST_KEY = 'maridadi.demoWishlist';
-const ORDERS_KEY = 'maridadi.demoOrders';
-const ADDRESSES_KEY = 'maridadi.demoAddresses';
+const CART_KEY = 'infinity.demoCart';
+const WISHLIST_KEY = 'infinity.demoWishlist';
+const ORDERS_KEY = 'infinity.demoOrders';
+const ADDRESSES_KEY = 'infinity.demoAddresses';
 
 function readJson<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;

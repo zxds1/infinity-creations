@@ -6,19 +6,19 @@
     <meta name="theme-color" content="#5A5A40" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="icon" type="image/svg+xml" href="/maridadi-icon.svg" />
-    <link rel="apple-touch-icon" href="/maridadi-icon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/infinity-icon.svg" />
+    <link rel="apple-touch-icon" href="/infinity-icon.svg" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
-    <title>Maridadi Creations | Design, Print & Brand</title>
+    <title>Infinity Creations | Design, Print & Brand</title>
     <script>
       (function () {
-        var redirect = sessionStorage.getItem('maridadi.redirect');
+        var redirect = sessionStorage.getItem('infinity.redirect');
         if (redirect) {
-          sessionStorage.removeItem('maridadi.redirect');
+          sessionStorage.removeItem('infinity.redirect');
           history.replaceState(null, '', redirect);
         }
-        var theme = localStorage.getItem('maridadi.theme') || 'system';
+        var theme = localStorage.getItem('infinity.theme') || 'system';
         var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         var resolved = theme === 'system' ? (prefersDark ? 'dark' : 'light') : theme;
         document.documentElement.classList.toggle('dark', resolved === 'dark');

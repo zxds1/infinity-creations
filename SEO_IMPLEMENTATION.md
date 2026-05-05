@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the SEO and AI agent discovery optimizations implemented for Maridadi Creations.
+This document outlines the SEO and AI agent discovery optimizations implemented for Infinity Creations.
 
 ---
 
@@ -81,11 +81,11 @@ All category pages link to:
 **Action**: Create/optimize Google Business Profile at https://business.google.com
 
 **Required Information**:
-- Business Name: Maridadi Creations
+- Business Name: Infinity Creations
 - Category: Printing service, Graphic design
 - Address: [Your Nairobi address]
 - Phone: [Contact number]
-- Website: https://maridadi.co.ke
+- Website: https://infinitycreations.co.ke
 - Hours: [Business hours]
 
 **Optimization**:
@@ -168,7 +168,7 @@ A: Pricing depends on size, material, and design complexity...
 ```json
 {
   "@type": "LocalBusiness",
-  "name": "Maridadi Creations - Custom Banners Nairobi",
+  "name": "Infinity Creations - Custom Banners Nairobi",
   "areaServed": "Nairobi, Kenya",
   "priceRange": "KES 2500 - KES 50000"
 }

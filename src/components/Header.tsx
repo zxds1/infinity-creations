@@ -77,7 +77,7 @@ export default function Header() {
         <Link to="/" className="flex items-center gap-3">
           <LogoMark className="h-9 w-9 rounded-xl shadow-lg shadow-brand-primary/10 md:h-10 md:w-10" />
           <div className="flex flex-col">
-            <span className="font-serif text-lg font-bold tracking-tight text-stone-900 leading-none mb-0.5 md:text-xl">Maridadi</span>
+            <span className="font-serif text-lg font-bold tracking-tight text-stone-900 leading-none mb-0.5 md:text-xl">Infinity</span>
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-primary/60">Creations</span>
           </div>
         </Link>

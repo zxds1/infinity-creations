@@ -35,9 +35,9 @@ export default function BrandingServicesPage() {
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
-    name: 'Maridadi Creations - Branding Services Nairobi',
+    name: 'Infinity Creations - Branding Services Nairobi',
     description: 'Professional branding services in Nairobi. Logo design, banners, vehicle branding, signage. Complete business branding solutions.',
-    url: 'https://maridadi.co.ke/branding-services-nairobi',
+    url: 'https://infinitycreations.co.ke/branding-services-nairobi',
     areaServed: { '@type': 'City', name: 'Nairobi', 'areaServed': 'Kenya' },
     priceRange: 'KES 2500 - KES 50000+',
     aggregateRating: { '@type': 'AggregateRating', ratingValue: '4.9', reviewCount: '150' },
@@ -56,7 +56,7 @@ export default function BrandingServicesPage() {
           'brand identity design Kenya',
           'logo design Nairobi',
         ]}
-        canonicalUrl="https://maridadi.co.ke/branding-services-nairobi"
+        canonicalUrl="https://infinitycreations.co.ke/branding-services-nairobi"
         schema={schema}
       />
 
@@ -152,7 +152,7 @@ export default function BrandingServicesPage() {
       {/* Why Choose */}
       <section className="bg-stone-50 py-16 lg:py-24">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-serif font-bold text-brand-primary mb-12">Why Maridadi Creations?</h2>
+          <h2 className="text-3xl md:text-4xl font-serif font-bold text-brand-primary mb-12">Why Infinity Creations?</h2>
           
           <div className="grid md:grid-cols-3 gap-8">
             {[

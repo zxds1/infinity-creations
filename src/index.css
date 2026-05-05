@@ -123,4 +123,56 @@
   .animate-fade-in {
     animation: fadeIn 0.3s ease-out;
   }
+
+  @keyframes startupFade {
+    0%, 76% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      visibility: hidden;
+    }
+  }
+
+  @keyframes infinityDraw {
+    0% {
+      stroke-dashoffset: 420;
+      opacity: 0.35;
+    }
+    68% {
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+    100% {
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+  }
+
+  @keyframes goldReveal {
+    0%, 45% {
+      stroke-dashoffset: 80;
+      opacity: 0;
+    }
+    100% {
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+  }
+
+  .startup-splash {
+    animation: startupFade 1.45s ease forwards;
+  }
+
+  .startup-infinity-path {
+    stroke-dasharray: 420;
+    stroke-dashoffset: 420;
+    animation: infinityDraw 1.15s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  }
+
+  .startup-gold-line {
+    stroke-dasharray: 80;
+    stroke-dashoffset: 80;
+    animation: goldReveal 1.1s ease 0.18s forwards;
+  }
 }

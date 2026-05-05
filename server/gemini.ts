@@ -137,7 +137,7 @@ async function buildVerifiedCheckoutItems(uid: string, cartItemIds: string[]) {
 }
 
 function getPaymentInstructions(paymentMethod: PaymentMethod, total: number, orderId: string) {
-  const checkoutRequestId = `maridadi_${orderId}`;
+  const checkoutRequestId = `infinity_${orderId}`;
 
   if (paymentMethod === 'mpesa') {
     return {
@@ -183,20 +183,20 @@ app.post('/api/analyze-space', async (req, res) => {
     };
 
     const basePrompt = `
-      You are a senior creative production consultant for "Maridadi Creations", a design, print, gift, decor, sticker, and branding studio.
+      You are a senior creative production consultant for "Infinity Creations", a design, print, gift, decor, sticker, and branding studio.
       Use the provided brief and any visual references to create a practical custom order direction.
       Include:
       1. A concise style direction.
       2. Recommended colors, materials, sizes, finishes, or print treatments.
       3. 3-5 customization options the customer can choose from.
-      4. Production notes Maridadi should confirm before quoting.
+      4. Production notes Infinity should confirm before quoting.
       5. Suggested next step for the customer.
 
       Format your response in professional Markdown.
     `;
 
     const prompt = refinementPrompt
-      ? `Create or refine a Maridadi Creations custom order direction from this customer brief: ${refinementPrompt}. If visual references are provided, use them. Be practical about design, print, branding, decor, sticker, gift, or production choices.`
+      ? `Create or refine a Infinity Creations custom order direction from this customer brief: ${refinementPrompt}. If visual references are provided, use them. Be practical about design, print, branding, decor, sticker, gift, or production choices.`
       : basePrompt;
 
     const parts: any[] = [{ text: prompt }];
@@ -227,7 +227,7 @@ app.post('/api/admin-insights', async (req, res) => {
 
     const { orders = [], products = [] } = req.body as { orders?: any[]; products?: any[] };
     const prompt = `
-      You are the data strategist for "Maridadi Creations", a luxury Kenyan artisanal brand.
+      You are the data strategist for "Infinity Creations", a luxury Kenyan artisanal brand.
       Analyze the current business state:
       - Total Orders: ${orders.length}
       - Catalog Size: ${products.length}
@@ -236,7 +236,7 @@ app.post('/api/admin-insights', async (req, res) => {
       Provide a brief high-level strategic brief (Markdown):
       1. Business Performance Summary.
       2. Inventory Recommendations based on observable demand patterns.
-      3. 2 growth opportunities specifically for Maridadi.
+      3. 2 growth opportunities specifically for Infinity.
       Keep it brief, professional, and luxury-focused. Use Kenyan business context.
     `;
 
@@ -307,9 +307,9 @@ app.post('/api/checkout/create', async (req, res) => {
         contact,
         deliveryAddress,
         fulfiller: {
-          name: 'Maridadi Creations',
+          name: 'Infinity Creations',
           location: 'Nairobi, Kenya',
-          support: 'hello@maridadicreations.com'
+          support: 'hello@infinitycreations.com'
         }
       },
       amounts: {
@@ -349,7 +349,7 @@ app.post('/api/checkout/create', async (req, res) => {
 app.post('/api/payments/callback/:provider', async (req, res) => {
   try {
     const sharedSecret = process.env.PAYMENT_CALLBACK_SECRET;
-    if (!sharedSecret || req.headers['x-maridadi-payment-secret'] !== sharedSecret) {
+    if (!sharedSecret || req.headers['x-infinity-payment-secret'] !== sharedSecret) {
       return res.status(401).json({ error: 'callback-forbidden' });
     }
 
@@ -423,5 +423,5 @@ app.post('/api/payments/callback/:provider', async (req, res) => {
 
 const port = Number(process.env.PORT || 8787);
 app.listen(port, () => {
-  console.log(`Maridadi AI API listening on ${port}`);
+  console.log(`Infinity AI API listening on ${port}`);
 });
