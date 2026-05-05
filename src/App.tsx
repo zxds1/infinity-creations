@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
@@ -13,7 +14,7 @@ import Orders from './pages/Orders';
 import Admin from './pages/Admin';
 import Wishlist from './pages/Wishlist';
 import Cart from './pages/Cart';
-import { socialLinks } from './lib/socialLinks';
+import { defaultSiteContent, fetchSiteContent, type SiteContent } from './lib/siteContent';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -59,6 +60,13 @@ function PageWrapper({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const [siteContent, setSiteContent] = useState<SiteContent>(defaultSiteContent);
+  const footerSocialLinks = siteContent.socialLinks.filter(link => link.href.trim());
+
+  useEffect(() => {
+    fetchSiteContent().then(setSiteContent).catch(() => undefined);
+  }, []);
+
   return (
     <Router>
       <ScrollToTop />
@@ -81,7 +89,7 @@ export default function App() {
                   Design, print, and branding services for personal style, spaces, devices, and businesses.
                 </p>
                 <div className="flex flex-wrap gap-3">
-                  {socialLinks.map(link => {
+                  {footerSocialLinks.map(link => {
                     return (
                       <a
                         key={link.label}
@@ -117,7 +125,9 @@ export default function App() {
                   <li>Nairobi, Kenya</li>
                   <li>hello@maridadicreations.com</li>
                   <li>+254 700 000 000</li>
-                  <li><a href={socialLinks[0].href} target="_blank" rel="noreferrer" className="font-bold text-brand-primary hover:text-stone-900">Message us @Maridadi Creations</a></li>
+                  {footerSocialLinks[0] && (
+                    <li><a href={footerSocialLinks[0].href} target="_blank" rel="noreferrer" className="font-bold text-brand-primary hover:text-stone-900">Message us @Maridadi Creations</a></li>
+                  )}
                 </ul>
               </div>
             </div>

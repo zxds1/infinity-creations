@@ -6,6 +6,8 @@ import { toast } from 'react-hot-toast';
 import { generateAdminInsights } from '../services/geminiService';
 import ReactMarkdown from 'react-markdown';
 import { defaultSiteContent, mergeSiteContent, type ServiceOffering, type SiteContent } from '../lib/siteContent';
+import SocialIcon from '../components/SocialIcon';
+import { defaultSocialLinks, type SocialLink, type SocialLinkId } from '../lib/socialLinks';
 
 const emptyServiceForm = {
   id: '',
@@ -20,7 +22,7 @@ const emptyServiceForm = {
 };
 
 export default function Admin() {
-  const [activeTab, setActiveTab] = useState<'orders' | 'catalog' | 'services' | 'categories' | 'content' | 'insights'>('orders');
+  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'catalog' | 'services' | 'categories' | 'content' | 'insights'>('overview');
   const [orders, setOrders] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -186,6 +188,40 @@ export default function Admin() {
     { label: 'Catalog Items', value: products.length, sub: `${catalogReadyCount} complete`, icon: ShoppingBag },
     { label: 'Services', value: siteContent.services.length, sub: `${configuredCategoryCount} categories`, icon: Paintbrush }
   ];
+  const incompleteProducts = products.filter(product => !product.name || !product.description || !product.image || Number(product.price || 0) <= 0);
+  const activeSocialLinks = siteContent.socialLinks.filter(link => link.href.trim());
+  const socialReadiness = siteContent.socialLinks.length ? Math.round((activeSocialLinks.length / siteContent.socialLinks.length) * 100) : 0;
+  const recentOrders = orders.slice(0, 5);
+  const controlTasks = [
+    {
+      label: 'Orders waiting',
+      value: pendingOrders,
+      action: 'Review orders',
+      tab: 'orders' as const,
+      done: pendingOrders === 0
+    },
+    {
+      label: 'Catalog items missing details',
+      value: incompleteProducts.length,
+      action: 'Fix catalog',
+      tab: 'catalog' as const,
+      done: incompleteProducts.length === 0
+    },
+    {
+      label: 'Active social links',
+      value: `${activeSocialLinks.length}/${siteContent.socialLinks.length}`,
+      action: 'Edit content',
+      tab: 'content' as const,
+      done: activeSocialLinks.length > 0
+    },
+    {
+      label: 'Configured services',
+      value: siteContent.services.length,
+      action: 'Manage services',
+      tab: 'services' as const,
+      done: siteContent.services.length > 0
+    }
+  ];
 
   const addService = async () => {
     try {
@@ -266,6 +302,40 @@ export default function Admin() {
     }));
   };
 
+  const updateSocialLink = (index: number, key: keyof SocialLink, value: string) => {
+    setSiteContent(prev => ({
+      ...prev,
+      socialLinks: prev.socialLinks.map((link, linkIndex) => {
+        if (linkIndex !== index) return link;
+        if (key === 'id') {
+          const preset = defaultSocialLinks.find(item => item.id === value);
+          return {
+            ...link,
+            id: value as SocialLinkId,
+            label: preset?.label || link.label,
+            brandColor: preset?.brandColor || link.brandColor
+          };
+        }
+        return { ...link, [key]: value };
+      })
+    }));
+  };
+
+  const addSocialLink = () => {
+    const nextPreset = defaultSocialLinks.find(link => !siteContent.socialLinks.some(existing => existing.id === link.id)) || defaultSocialLinks[0];
+    setSiteContent(prev => ({
+      ...prev,
+      socialLinks: [...prev.socialLinks, { ...nextPreset, href: '' }]
+    }));
+  };
+
+  const removeSocialLink = (index: number) => {
+    setSiteContent(prev => ({
+      ...prev,
+      socialLinks: prev.socialLinks.filter((_, linkIndex) => linkIndex !== index)
+    }));
+  };
+
   const saveSiteContent = async () => {
     setSavingContent(true);
     try {
@@ -290,7 +360,7 @@ export default function Admin() {
                 Maridadi Admin
               </div>
               <h1 className="text-4xl md:text-5xl font-serif italic font-light leading-tight">
-                Store <span className="not-italic font-bold">Management</span>
+                Control <span className="not-italic font-bold">Center</span>
               </h1>
             </div>
             <button 
@@ -336,6 +406,7 @@ export default function Admin() {
         {/* Tab Selection Redesign */}
         <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide mb-8">
           {[
+            { id: 'overview', icon: Settings, label: 'Overview' },
             { id: 'orders', icon: Clock, label: 'Orders' },
             { id: 'catalog', icon: ShoppingBag, label: 'Catalog' },
             { id: 'services', icon: Paintbrush, label: 'Services' },
@@ -356,6 +427,123 @@ export default function Admin() {
       </div>
 
       <AnimatePresence mode="wait">
+        {activeTab === 'overview' && (
+          <motion.div key="overview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="mx-auto max-w-7xl space-y-8 px-4 lg:px-8">
+            <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1.15fr_0.85fr]">
+              <div className="rounded-[32px] border border-stone-100 bg-white p-6 shadow-sm md:p-8">
+                <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h3 className="text-2xl font-serif">Today at a glance</h3>
+                    <p className="mt-2 text-sm text-stone-500">Track orders, catalog readiness, services, and contact channels from one place.</p>
+                  </div>
+                  <button
+                    onClick={generateInsights}
+                    disabled={generatingInsights}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-stone-900 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-white disabled:opacity-50"
+                  >
+                    <Sparkles size={14} />
+                    {generatingInsights ? 'Reviewing...' : 'Create insights'}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {controlTasks.map(task => (
+                    <button
+                      key={task.label}
+                      onClick={() => setActiveTab(task.tab)}
+                      className="flex min-h-28 items-center justify-between gap-5 rounded-3xl border border-stone-100 bg-stone-50 p-5 text-left transition-colors hover:bg-white"
+                    >
+                      <div>
+                        <div className="text-2xl font-bold text-stone-900">{task.value}</div>
+                        <div className="mt-1 text-[10px] font-black uppercase tracking-widest text-stone-400">{task.label}</div>
+                        <div className="mt-3 text-[10px] font-black uppercase tracking-widest text-brand-primary">{task.action}</div>
+                      </div>
+                      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${task.done ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                        {task.done ? <CheckCircle2 size={18} /> : <Clock size={18} />}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-[32px] border border-stone-100 bg-white p-6 shadow-sm md:p-8">
+                <h3 className="text-2xl font-serif">Readiness</h3>
+                <p className="mt-2 text-sm text-stone-500">Completion checks based on the current saved data.</p>
+                <div className="mt-8 space-y-6">
+                  {[
+                    { label: 'Catalog', value: catalogReadiness, detail: `${catalogReadyCount} of ${products.length} items complete` },
+                    { label: 'Social links', value: socialReadiness, detail: `${activeSocialLinks.length} active links` },
+                    { label: 'Services', value: siteContent.services.length > 0 ? 100 : 0, detail: `${siteContent.services.length} services configured` }
+                  ].map(item => (
+                    <div key={item.label}>
+                      <div className="mb-2 flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
+                        <span className="text-stone-400">{item.label}</span>
+                        <span className="text-brand-primary">{item.value}%</span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-stone-100">
+                        <div className="h-full rounded-full bg-brand-primary" style={{ width: `${item.value}%` }} />
+                      </div>
+                      <p className="mt-2 text-xs text-stone-400">{item.detail}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-8 xl:grid-cols-3">
+              <div className="rounded-[32px] border border-stone-100 bg-white p-6 shadow-sm md:p-8 xl:col-span-2">
+                <div className="mb-6 flex items-center justify-between">
+                  <h3 className="text-2xl font-serif">Recent orders</h3>
+                  <button onClick={() => setActiveTab('orders')} className="text-[10px] font-black uppercase tracking-widest text-brand-primary">View all</button>
+                </div>
+                {recentOrders.length > 0 ? (
+                  <div className="divide-y divide-stone-50">
+                    {recentOrders.map(order => (
+                      <div key={order.id} className="flex flex-col gap-3 py-4 md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <p className="font-bold text-stone-900">{order.details?.productName || order.details?.serviceName || 'Custom Request'}</p>
+                          <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-stone-400">#{order.id.slice(-6).toUpperCase()} · {order.type || 'Order'}</p>
+                        </div>
+                        <span className="w-fit rounded-full bg-stone-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-stone-500">{order.status || 'received'}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="rounded-2xl bg-stone-50 p-5 text-sm text-stone-400">No orders yet.</p>
+                )}
+              </div>
+
+              <div className="rounded-[32px] border border-stone-100 bg-white p-6 shadow-sm md:p-8">
+                <div className="mb-6 flex items-center justify-between">
+                  <h3 className="text-2xl font-serif">Live channels</h3>
+                  <button onClick={() => setActiveTab('content')} className="text-[10px] font-black uppercase tracking-widest text-brand-primary">Edit</button>
+                </div>
+                <div className="space-y-3">
+                  {activeSocialLinks.length > 0 ? activeSocialLinks.map(link => (
+                    <a
+                      key={link.id}
+                      href={link.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-between rounded-2xl bg-stone-50 p-4"
+                    >
+                      <span className="flex items-center gap-3 text-sm font-bold text-stone-700">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white" style={{ color: link.brandColor }}>
+                          <SocialIcon id={link.id} size={17} />
+                        </span>
+                        {link.label}
+                      </span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Active</span>
+                    </a>
+                  )) : (
+                    <p className="rounded-2xl bg-stone-50 p-5 text-sm text-stone-400">No social links are active yet.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {activeTab === 'orders' && (
           <motion.div key="orders" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
             {/* Desktop Table View */}
@@ -819,6 +1007,60 @@ export default function Admin() {
                     <input type="file" className="text-[10px] text-stone-400" accept="image/*" onChange={event => handleFileUpload(event, 'hero')} />
                   </div>
                 </label>
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-stone-100 bg-white p-6 shadow-sm md:p-8">
+              <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h3 className="text-2xl font-serif">Social Links</h3>
+                  <p className="mt-2 text-sm text-stone-500">These links power the footer and sidebar contact buttons.</p>
+                </div>
+                <button
+                  onClick={addSocialLink}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-stone-900 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-white"
+                >
+                  <Plus size={14} />
+                  Add link
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {siteContent.socialLinks.map((link, index) => (
+                  <div key={`${link.id}-${index}`} className="grid grid-cols-1 gap-3 rounded-3xl bg-stone-50 p-4 lg:grid-cols-[150px_1fr_140px_auto] lg:items-center">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white" style={{ color: link.brandColor }}>
+                        <SocialIcon id={link.id} size={18} />
+                      </span>
+                      <select
+                        value={link.id}
+                        onChange={(event) => updateSocialLink(index, 'id', event.target.value)}
+                        className="min-h-11 rounded-2xl border border-stone-100 bg-white px-3 text-xs font-bold outline-none focus:border-brand-primary"
+                      >
+                        {defaultSocialLinks.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}
+                      </select>
+                    </div>
+                    <input
+                      value={link.href}
+                      onChange={(event) => updateSocialLink(index, 'href', event.target.value)}
+                      placeholder="Social profile URL"
+                      className="min-h-11 rounded-2xl border border-stone-100 bg-white px-4 text-sm outline-none focus:border-brand-primary"
+                    />
+                    <input
+                      value={link.brandColor}
+                      onChange={(event) => updateSocialLink(index, 'brandColor', event.target.value)}
+                      placeholder="#000000"
+                      className="min-h-11 rounded-2xl border border-stone-100 bg-white px-4 text-sm outline-none focus:border-brand-primary"
+                    />
+                    <button
+                      onClick={() => removeSocialLink(index)}
+                      className="flex min-h-11 items-center justify-center rounded-2xl bg-red-50 px-4 text-red-400 hover:bg-red-100"
+                      aria-label={`Remove ${link.label}`}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
 

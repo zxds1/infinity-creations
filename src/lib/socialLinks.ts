@@ -7,7 +7,7 @@ export interface SocialLink {
   brandColor: string;
 }
 
-export const socialLinks: SocialLink[] = [
+export const defaultSocialLinks: SocialLink[] = [
   {
     id: 'whatsapp',
     label: 'WhatsApp',
@@ -45,3 +45,20 @@ export const socialLinks: SocialLink[] = [
     brandColor: '#0A66C2'
   }
 ];
+
+export const socialLinks = defaultSocialLinks;
+
+export function normalizeSocialLinks(links?: Partial<SocialLink>[] | null): SocialLink[] {
+  if (!Array.isArray(links)) return defaultSocialLinks;
+  if (links.length === 0) return [];
+
+  return links.map((link, index) => {
+    const fallback = defaultSocialLinks[index % defaultSocialLinks.length];
+    return {
+      id: (link.id || fallback.id) as SocialLinkId,
+      label: link.label || fallback.label,
+      href: link.href || '',
+      brandColor: link.brandColor || fallback.brandColor
+    };
+  });
+}

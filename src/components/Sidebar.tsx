@@ -4,20 +4,25 @@ import { auth } from '../lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { Camera, ShoppingBag, Paintbrush, User as UserIcon, X, ChevronRight, Settings, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { socialLinks } from '../lib/socialLinks';
 import SocialIcon from './SocialIcon';
+import { defaultSiteContent, fetchSiteContent, type SiteContent } from '../lib/siteContent';
 
 export default function Sidebar() {
   const [user, setUser] = useState<User | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [siteContent, setSiteContent] = useState<SiteContent>(defaultSiteContent);
   const location = useLocation();
+  const sidebarSocialLinks = siteContent.socialLinks.filter(link => link.href.trim());
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
     });
     return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    fetchSiteContent().then(setSiteContent).catch(() => undefined);
   }, []);
 
   const navItems = [
@@ -159,7 +164,7 @@ export default function Sidebar() {
               animate={{ opacity: 1 }}
               className="flex justify-center gap-6 pt-6 border-t border-stone-100 text-stone-300"
             >
-              {socialLinks.map(link => {
+              {sidebarSocialLinks.map(link => {
                 return (
                   <a
                     key={link.label}

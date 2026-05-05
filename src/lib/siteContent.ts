@@ -1,4 +1,5 @@
 import { db, doc, getDocFromServer } from './firebase';
+import { defaultSocialLinks, normalizeSocialLinks, type SocialLink } from './socialLinks';
 
 export interface CreationCategory {
   title: string;
@@ -38,6 +39,7 @@ export interface SiteContent {
   businessSubtitle: string;
   categories: CreationCategory[];
   services: ServiceOffering[];
+  socialLinks: SocialLink[];
 }
 
 export const defaultCreationCategories: CreationCategory[] = [
@@ -193,7 +195,8 @@ export const defaultSiteContent: SiteContent = {
   businessTitle: 'Branding for your business',
   businessSubtitle: 'From banners to vehicle branding, we help your business stand out.',
   categories: defaultCreationCategories,
-  services: defaultServiceOfferings
+  services: defaultServiceOfferings,
+  socialLinks: defaultSocialLinks
 };
 
 export function mergeSiteContent(data?: Partial<SiteContent> | null): SiteContent {
@@ -211,7 +214,8 @@ export function mergeSiteContent(data?: Partial<SiteContent> | null): SiteConten
           ...defaultServiceOfferings[index % defaultServiceOfferings.length],
           ...service
         })).sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
-      : defaultSiteContent.services
+      : defaultSiteContent.services,
+    socialLinks: normalizeSocialLinks(data?.socialLinks)
   };
 }
 
