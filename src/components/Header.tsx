@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { auth, signInWithGoogle, db, collection, getDocs, query, limit } from '../lib/firebase';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
-import { Camera, Home, ShoppingBag, Paintbrush, User as UserIcon, LogOut, Menu, X, Search, Sparkles } from 'lucide-react';
+import { Camera, Home, ShoppingBag, Paintbrush, User as UserIcon, LogOut, Menu, X, Search, Sparkles, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Tooltip from './Tooltip';
 
@@ -64,10 +64,10 @@ export default function Header() {
   }, []);
 
   const navItems = [
-    { name: 'Home', path: '/', icon: Home },
-    { name: 'AI Design', path: '/analyzer', icon: Camera },
-    { name: 'Shop', path: '/shop', icon: ShoppingBag },
-    { name: 'Branding', path: '/branding', icon: Paintbrush },
+    { name: 'Discover', path: '/shop', icon: ShoppingBag },
+    { name: 'Design', path: '/analyzer', icon: Camera },
+    { name: 'Activity', path: '/orders', icon: UserIcon },
+    { name: 'Account', path: '/wishlist', icon: Heart },
   ];
 
   return (

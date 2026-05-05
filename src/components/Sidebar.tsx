@@ -30,13 +30,12 @@ export default function Sidebar() {
   }, []);
 
   const navItems = [
-    { name: 'Home', path: '/', icon: Home },
-    { name: 'AI Design', path: '/analyzer', icon: Camera },
-    { name: 'The Studio', path: '/shop', icon: ShoppingBag },
-    { name: 'Fashion & Branding', path: '/branding', icon: Paintbrush },
-    { name: 'My Orders', path: '/orders', icon: UserIcon },
-    { name: 'Wishlist', path: '/wishlist', icon: Heart },
-    { name: 'My Cart', path: '/cart', icon: ShoppingBag },
+    { name: 'Discover', path: '/shop', icon: ShoppingBag },
+    { name: 'Design', path: '/analyzer', icon: Camera },
+    { name: 'Activity', path: '/orders', icon: UserIcon },
+    { name: 'Account', path: '/wishlist', icon: Heart },
+    { name: 'Cart', path: '/cart', icon: ShoppingBag },
+    { name: 'Branding', path: '/branding', icon: Paintbrush },
   ];
 
   const sidebarVariants = {

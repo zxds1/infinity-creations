@@ -305,6 +305,9 @@ export default function Cart() {
                               </div>
                             )}
                             <p className="text-brand-primary font-bold text-lg mt-1">KSH {item.price}</p>
+                            <p className="mt-1 text-xs font-bold uppercase tracking-widest text-stone-400">
+                              Line subtotal: KSH {item.price * item.quantity}
+                            </p>
                           </div>
                           <button onClick={() => removeItem(item.id)} className="text-stone-300 hover:text-red-500 transition-colors">
                             <Trash2 size={20} />
@@ -374,6 +377,11 @@ export default function Cart() {
                       <Phone size={20} className="text-brand-primary mb-3" />
                       <h3 className="font-bold text-sm">Support</h3>
                       <p className="text-xs text-stone-400 mt-1">Payment and delivery help by email after checkout.</p>
+                    </div>
+                    <div className="rounded-2xl bg-stone-50 p-5 md:col-span-3">
+                      <ShieldCheck size={20} className="text-brand-primary mb-3" />
+                      <h3 className="font-bold text-sm">Secure checkout</h3>
+                      <p className="text-xs text-stone-400 mt-1">The backend recalculates item prices, delivery fee, and total before payment instructions are issued.</p>
                     </div>
                   </div>
 

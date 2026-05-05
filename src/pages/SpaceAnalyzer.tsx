@@ -1,13 +1,14 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Camera, Upload, Sparkles, RefreshCw, ChevronRight, Share2, Crop, Check, X, Send, Play, Video, Plus, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Link } from 'react-router-dom';
 import { analyzeSpace } from '../services/geminiService';
 import ReactMarkdown from 'react-markdown';
 import Cropper from 'react-easy-crop';
-import { auth, db, collection, addDoc, serverTimestamp, handleFirestoreError, OperationType } from '../lib/firebase';
+import { auth, db, collection, addDoc, serverTimestamp, handleFirestoreError, OperationType, getDocs } from '../lib/firebase';
 import { toast } from 'react-hot-toast';
 import Tooltip from '../components/Tooltip';
-import { extractDesignPreferences, saveStoredPreferences, trackEvent } from '../lib/behavior';
+import { extractDesignPreferences, getProductInsightLabels, getProductPreferenceScore, getStoredPreferences, saveStoredPreferences, trackEvent } from '../lib/behavior';
 
 export default function SpaceAnalyzer() {
   const [mediaFiles, setMediaFiles] = useState<{ type: 'image' | 'video', data: string }[]>([]);
@@ -23,16 +24,28 @@ export default function SpaceAnalyzer() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [result, setResult] = useState<string | null>(null);
   const [refinementText, setRefinementText] = useState("");
+  const [products, setProducts] = useState<any[]>([]);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    getDocs(collection(db, 'products'))
+      .then(snapshot => setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))))
+      .catch(() => undefined);
+
     return () => {
       stopCamera();
     };
   }, []);
+
+  const matchedProducts = result
+    ? products
+        .slice()
+        .sort((a, b) => getProductPreferenceScore(b, getStoredPreferences()) - getProductPreferenceScore(a, getStoredPreferences()))
+        .slice(0, 3)
+    : [];
 
   const startCamera = async () => {
     try {
@@ -316,8 +329,8 @@ export default function SpaceAnalyzer() {
 
       <div className="text-center mb-12">
         <h1 className="text-5xl md:text-6xl mb-4 italic font-light">AI <span className="font-serif not-italic">Analyzer</span></h1>
-        <p className="text-stone-400 text-lg max-w-2xl mx-auto leading-relaxed font-serif italic">
-          Reimagine your sanctuary with the precision of AI and the soul of artisanal craft.
+        <p className="text-stone-500 text-lg max-w-2xl mx-auto leading-relaxed">
+          Tell us your style with a room photo so we can recommend better products and matching items.
         </p>
       </div>
 
@@ -510,6 +523,35 @@ export default function SpaceAnalyzer() {
                 <div className="prose prose-stone max-w-none prose-p:leading-relaxed prose-h3:text-2xl prose-h3:mt-8 prose-h3:mb-4 prose-h3:font-serif">
                   <ReactMarkdown>{result}</ReactMarkdown>
                 </div>
+
+                {matchedProducts.length > 0 && (
+                  <div className="mt-12 border-t border-stone-100 pt-10">
+                    <div className="mb-6 flex items-center justify-between gap-4">
+                      <div>
+                        <h4 className="text-xl font-serif text-stone-900">Matching products</h4>
+                        <p className="text-sm text-stone-400">Ranked from the style, color, and layout cues found in your analysis.</p>
+                      </div>
+                      <Link to="/shop" className="text-[10px] font-black uppercase tracking-widest text-brand-primary flex items-center gap-2">
+                        Compare all <ChevronRight size={14} />
+                      </Link>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      {matchedProducts.map((product, index) => (
+                        <Link key={product.id} to={`/shop?query=${encodeURIComponent(product.name)}`} className="group flex gap-4 rounded-3xl bg-stone-50 p-4 text-left hover:bg-white hover:shadow-sm">
+                          <img src={product.image} alt={product.name} className="h-24 w-24 rounded-2xl object-cover" referrerPolicy="no-referrer" />
+                          <div className="min-w-0 flex-1 py-1">
+                            <h5 className="truncate font-bold text-stone-900">{product.name}</h5>
+                            <p className="mt-1 text-sm font-bold text-brand-primary">KSH {product.price}</p>
+                            <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-stone-400">
+                              {getProductInsightLabels(product, getStoredPreferences(), index)[0]}
+                            </p>
+                          </div>
+                          <ChevronRight size={18} className="mt-2 text-stone-300 group-hover:text-brand-primary" />
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Refinement Section */}
                 <div className="mt-12 pt-10 border-t border-stone-100">

@@ -156,11 +156,24 @@ export default function Wishlist() {
                             {label}
                           </span>
                         ))}
+                        <span className="rounded-full bg-brand-primary/90 px-3 py-1 text-[9px] font-black uppercase tracking-widest text-white backdrop-blur">
+                          {Number(product?.stockQuantity ?? 4) <= 0 ? 'Back in stock watch' : 'Available now'}
+                        </span>
                       </div>
                     </div>
                     <div className="p-6 text-center">
                       <h3 className="text-xl font-bold mb-1">{item.productName}</h3>
                       <p className="text-brand-primary font-bold mb-6">KSH {item.price}</p>
+                      <div className="mb-5 grid grid-cols-2 gap-2 text-left">
+                        <div className="rounded-2xl bg-stone-50 p-3">
+                          <span className="block text-[8px] font-black uppercase tracking-widest text-stone-400">Price cue</span>
+                          <span className="mt-1 block text-xs font-bold text-stone-700">{product && Number(product.price) !== Number(item.price) ? 'Price changed' : 'Stable price'}</span>
+                        </div>
+                        <div className="rounded-2xl bg-stone-50 p-3">
+                          <span className="block text-[8px] font-black uppercase tracking-widest text-stone-400">Similar items</span>
+                          <span className="mt-1 block text-xs font-bold text-stone-700">{recommendedProducts.length} suggested</span>
+                        </div>
+                      </div>
                       <button
                         onClick={() => moveToCart(item)}
                         className="w-full bg-stone-900 text-white py-4 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-brand-primary transition-colors"
