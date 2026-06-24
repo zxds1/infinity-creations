@@ -1,4 +1,4 @@
-# Maridadi Creations
+# infinity Creations
 
 **AI-Powered Design & Branding Platform**
 
